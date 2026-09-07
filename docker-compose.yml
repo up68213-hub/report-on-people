@@ -1,0 +1,17 @@
+services:
+  people-report:
+    build: .
+    restart: unless-stopped
+    environment:
+      PORT: 3000
+      HOST: 0.0.0.0
+      AUTH_MODE: dev
+      DEV_USER_ID: 1
+      DATABASE_PATH: /app/data/report.sqlite
+    ports:
+      - "3000:3000"
+    volumes:
+      - people-report-data:/app/data
+
+volumes:
+  people-report-data:

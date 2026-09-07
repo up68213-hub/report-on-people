@@ -1,0 +1,4069 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Отчет по людям</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.plot.ly/plotly-2.27.0.min.js">
+  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js">
+  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js">
+  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js">
+  </script>
+  <style>
+    /* ── Цветовая палитра ── */
+    :root,
+    [data-theme="light"] {
+      --bg: #F4F7FC;
+      --surface: #FFFFFF;
+      --surface-2: #E8F0FA;
+      --surface-3: #DCE6F2;
+      --ink: #1A2A3A;
+      --ink-soft: #4A5A6E;
+      --ink-mute: #7A8A9E;
+      --ink-dim: #A8B8C8;
+      --primary: #70A9DE;
+      --primary-hover: #5A8FC4;
+      --primary-active: #4A7AB0;
+      --primary-soft: #E8F0FA;
+      --success: #9DB984;
+      --warning: #EECB95;
+      --danger: #D88188;
+      --gray: #BDC3C7;
+      --border: #E2E8F0;
+      --shadow: rgba(26, 42, 58, 0.08);
+      --shadow-sm: rgba(26, 42, 58, 0.06);
+      --shadow-xs: rgba(26, 42, 58, 0.04);
+      --shadow-in: inset 0 2px 6px rgba(26, 42, 58, 0.06);
+      --shadow-in-sm: inset 0 1px 4px rgba(26, 42, 58, 0.04);
+      --scroll-thumb: rgba(112, 169, 222, .40);
+      --scroll-thumb-hover: rgba(112, 169, 222, .72);
+      --chart-color: #70A9DE;
+      --chart-quality-color: #4A8BBE;
+      --table-badge-color: #70A9DE;
+      --roi-bad: #D88188;
+      --roi-mid: #EECB95;
+      --roi-good: #9DB984;
+      --tag-bad-bg: #FDE8E8;
+      --tag-bad-text: #C0392B;
+      --on-primary: #FFFFFF;
+      --font: 'Nunito', 'Helvetica Neue', Arial, sans-serif;
+      --shadow-out: 0 8px 22px var(--shadow), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+      --shadow-out-sm: 0 5px 14px var(--shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+      --shadow-out-xs: 0 2px 8px var(--shadow-xs);
+      --shadow-in: inset 0 2px 6px rgba(26, 42, 58, 0.06);
+      --shadow-in-sm: inset 0 1px 4px rgba(26, 42, 58, 0.04);
+      --radius: 12px;
+    }
+
+    [data-theme="dark"] {
+      --bg: #0D1A2A;
+      --surface: #162533;
+      --surface-2: #1A2A42;
+      --surface-3: #1E3042;
+      --ink: #E8EDF2;
+      --ink-soft: #A8B8C8;
+      --ink-mute: #6888A8;
+      --ink-dim: #4A6A8A;
+      --primary: #70A9DE;
+      --primary-hover: #8ABCE8;
+      --primary-active: #4A8BBE;
+      --primary-soft: #1A2A42;
+      --success: #9DB984;
+      --warning: #EECB95;
+      --danger: #D88188;
+      --gray: #BDC3C7;
+      --border: #2A3A4E;
+      --shadow: rgba(0, 0, 0, 0.4);
+      --shadow-sm: rgba(0, 0, 0, 0.3);
+      --shadow-xs: rgba(0, 0, 0, 0.2);
+      --shadow-in: inset 0 2px 6px rgba(0, 0, 0, 0.3);
+      --shadow-in-sm: inset 0 1px 4px rgba(0, 0, 0, 0.2);
+      --scroll-thumb: rgba(112, 169, 222, .45);
+      --scroll-thumb-hover: rgba(112, 169, 222, .78);
+      --chart-color: #70A9DE;
+      --chart-quality-color: #8ABCE8;
+      --table-badge-color: #70A9DE;
+      --roi-bad: #D88188;
+      --roi-mid: #EECB95;
+      --roi-good: #9DB984;
+      --tag-bad-bg: #2A1A1A;
+      --tag-bad-text: #E8A0A0;
+      --on-primary: #FFFFFF;
+      --font: 'Nunito', 'Helvetica Neue', Arial, sans-serif;
+      --shadow-out: 0 10px 24px var(--shadow), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      --shadow-out-sm: 0 6px 14px var(--shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+      --shadow-out-xs: 0 3px 8px var(--shadow-xs);
+      --shadow-in: inset 0 3px 8px rgba(0, 0, 0, 0.4);
+      --shadow-in-sm: inset 0 2px 5px rgba(0, 0, 0, 0.3);
+      --radius: 12px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    html,
+    body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: 'Nunito', 'Helvetica Neue', Arial, sans-serif;
+      font-weight: 500;
+      -webkit-font-smoothing: antialiased;
+    }
+    body {
+      background: var(--bg);
+    }
+    [data-theme="dark"] body {
+      background: var(--bg);
+    }
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background: radial-gradient(46% 48% at 84% 4%, rgba(112, 169, 222, 0.05) 0%, rgba(112, 169, 222, 0) 62%),
+        radial-gradient(48% 50% at 6% 98%, rgba(112, 169, 222, 0.04) 0%, rgba(112, 169, 222, 0) 64%);
+    }
+    [data-theme="dark"] body::before {
+      background: radial-gradient(46% 50% at 84% 4%, rgba(112, 169, 222, 0.10) 0%, rgba(112, 169, 222, 0) 62%),
+        radial-gradient(48% 52% at 6% 98%, rgba(112, 169, 222, 0.06) 0%, rgba(112, 169, 222, 0) 64%);
+    }
+
+    .canvas {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      z-index: 1;
+      width: 1920px;
+      height: 1080px;
+      padding: 24px 40px 20px;
+      overflow: hidden;
+      transform-origin: center center;
+      transform: translate(-50%, -50%) scale(var(--canvas-scale, 1));
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    /* ── HEADER ── */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      flex-shrink: 0;
+    }
+    .title-block {
+      flex: 1;
+    }
+    h1 {
+      font-size: 32px;
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: .01em;
+      color: var(--ink);
+      text-transform: uppercase;
+    }
+    h1 .accent {
+      color: var(--primary);
+      font-weight: 800;
+    }
+    .h1-sub {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--ink-soft);
+      letter-spacing: .02em;
+    }
+    .topbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+    .btn-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-out-sm);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--ink-mute);
+      transition: box-shadow .18s, color .18s, transform .18s, border-color .18s;
+      flex-shrink: 0;
+    }
+    .btn-icon:hover {
+      color: var(--primary);
+      border-color: var(--primary);
+      box-shadow: 0 0 12px rgba(112, 169, 222, .30);
+    }
+    .btn-icon:active {
+      transform: translateY(1px);
+    }
+    .btn-icon svg {
+      width: 20px;
+      height: 20px;
+      display: block;
+      stroke: currentColor;
+      fill: none;
+    }
+
+    .btn-update,
+    .btn-reset {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: var(--primary-soft);
+      border: 1px solid var(--primary);
+      box-shadow: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--primary);
+      transition: box-shadow .18s, color .18s, transform .18s, background .18s;
+      flex-shrink: 0;
+    }
+    .btn-update:hover,
+    .btn-reset:hover {
+      color: var(--primary-hover);
+      box-shadow: 0 0 0 1px var(--primary), 0 0 14px rgba(112, 169, 222, .40);
+    }
+    .btn-update:active,
+    .btn-reset:active {
+      transform: translateY(1px);
+    }
+    .btn-reset.dirty {
+      color: var(--danger);
+      border-color: var(--danger);
+      animation: resetPulse 1.8s infinite;
+    }
+    @keyframes resetPulse {
+      0%,
+      100% {
+        box-shadow: 0 0 0 0 rgba(216, 129, 136, .45);
+      }
+      50% {
+        box-shadow: 0 0 0 5px rgba(216, 129, 136, 0);
+      }
+    }
+    .btn-update svg,
+    .btn-reset svg {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+      stroke: currentColor;
+      fill: none;
+    }
+
+    .btn-filter-wrap {
+      position: relative;
+    }
+    .filter-badge {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      min-width: 20px;
+      height: 20px;
+      padding: 0 6px;
+      border-radius: 99px;
+      background: var(--danger);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 900;
+      line-height: 20px;
+      text-align: center;
+      box-shadow: var(--shadow-out-xs);
+      display: none;
+    }
+    .filter-badge.show {
+      display: block;
+    }
+
+    .theme-toggle {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: var(--primary-soft);
+      border: 1px solid var(--primary);
+      box-shadow: var(--shadow-out-sm);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--primary);
+      transition: box-shadow .18s, color .18s, transform .18s, background .18s;
+      flex-shrink: 0;
+    }
+    .theme-toggle:hover {
+      background: var(--primary-soft);
+      box-shadow: 0 0 0 1px var(--primary), 0 0 12px rgba(112, 169, 222, .35);
+    }
+    .theme-toggle:active {
+      transform: translateY(1px);
+    }
+    .theme-toggle svg {
+      width: 22px;
+      height: 22px;
+      display: block;
+      stroke: currentColor;
+      fill: none;
+    }
+    .theme-toggle .icon-sun {
+      display: block;
+    }
+    .theme-toggle .icon-moon {
+      display: none;
+    }
+    [data-theme="dark"] .theme-toggle .icon-moon {
+      display: block;
+    }
+    [data-theme="dark"] .theme-toggle .icon-sun {
+      display: none;
+    }
+    [data-theme="light"] .theme-toggle {
+      color: var(--on-primary);
+    }
+    [data-theme="dark"] .theme-toggle {
+      color: var(--on-primary);
+    }
+
+    /* ── KPI ROW ── */
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      flex-shrink: 0;
+    }
+    .kpi {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 18px 16px;
+      box-shadow: var(--shadow-out);
+      position: relative;
+      transition: transform .2s, box-shadow .25s, border-color .2s;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+    }
+    .kpi[data-metric]:hover {
+      transform: translateY(-2px);
+      border-color: var(--primary);
+    }
+    .kpi[data-metric="percent"]:hover {
+      transform: none;
+      border-color: transparent;
+    }
+    .kpi[data-metric].active {
+      background: var(--primary-soft);
+      border-color: var(--primary);
+      box-shadow: 0 0 0 1px var(--primary), 0 0 18px rgba(112, 169, 222, .20), inset 0 0 22px rgba(112, 169, 222, .08);
+      transform: none;
+    }
+    .kpi[data-metric].active .kpi-label {
+      color: var(--primary-active);
+    }
+    .kpi[data-metric].active .kpi-num {
+      color: var(--primary);
+    }
+    .kpi[data-metric].active .kpi-tag {
+      background: var(--primary);
+      color: var(--on-primary);
+    }
+    .kpi-label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--ink-soft);
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+    .kpi-tag {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--primary-active);
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      background: var(--primary-soft);
+      padding: 3px 10px;
+      border-radius: 99px;
+      white-space: nowrap;
+      border: 1px solid var(--border);
+    }
+    .kpi-num {
+      font-size: 48px;
+      font-weight: 800;
+      color: var(--ink);
+      letter-spacing: -.01em;
+      line-height: 1.0;
+    }
+    .kpi-main {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 10px;
+    }
+    .kpi-main-center {
+      justify-content: center;
+    }
+    .kpi-main-percent {
+      justify-content: center;
+      gap: 24px;
+    }
+    .kpi-numwrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+
+    .kpi.roi-good {
+      border-left: 6px solid var(--success);
+    }
+    .kpi.roi-mid {
+      border-left: 6px solid var(--warning);
+    }
+    .kpi.roi-bad {
+      border-left: 6px solid var(--danger);
+    }
+
+    /* KPI Donut - SVG-based кольцевая диаграмма */
+    .kpi-donut-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .kpi-donut {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      position: relative;
+    }
+    .kpi-donut svg {
+      width: 100%;
+      height: 100%;
+      /* поворот задан атрибутом transform внутри SVG, а не здесь:
+         html2canvas не применяет CSS-трансформации к inline SVG,
+         из-за чего на скриншоте дуга начиналась не с 12 часов */
+    }
+    .kpi-donut .donut-bg {
+      fill: none;
+      stroke: var(--surface-3);
+      stroke-width: 16;
+    }
+    .kpi-donut .donut-segment {
+      fill: none;
+      stroke-width: 16;
+      stroke-linecap: round;
+      transition: stroke-dasharray 0.5s ease, stroke 0.3s ease;
+    }
+
+    /* ── PANELS ── */
+    /* Детализация занимает 70% ширины, графики — 30%:
+       в таблице 7 столбцов, графикам достаточно узкой колонки.
+       minmax(0, …) нужен, чтобы широкая таблица не распирала
+       колонку и соотношение сохранялось точно */
+    .panels-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 70fr) minmax(0, 30fr);
+      gap: 14px;
+      flex: 1;
+      min-height: 0;
+    }
+    .panel {
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: var(--shadow-out);
+      min-height: 0;
+    }
+    .panel-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      padding: 12px 20px 8px;
+      min-height: 44px;
+      flex-shrink: 0;
+      gap: 12px;
+    }
+    .panel-title {
+      font-size: 15px;
+      font-weight: 900;
+      color: var(--ink);
+      letter-spacing: .02em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .panel-unit {
+      font-size: 15px;
+      font-weight: 900;
+      color: var(--ink);
+      letter-spacing: .02em;
+      text-transform: uppercase;
+      font-style: normal;
+    }
+    .panel-unit::before {
+      content: ', ';
+    }
+    .panel-unit:empty::before {
+      content: '';
+    }
+    .panel-sub {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--primary-active);
+      background: transparent;
+      padding: 0;
+      border-radius: 0;
+      letter-spacing: .04em;
+      margin-top: 2px;
+      white-space: nowrap;
+      flex-shrink: 0;
+      text-transform: uppercase;
+    }
+    .panel-sub.corner {
+      margin-top: 0;
+      align-self: flex-start;
+      padding-top: 2px;
+    }
+    .panel-sub::before {
+      content: '';
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--primary);
+      flex-shrink: 0;
+      box-shadow: 0 0 0 0 rgba(112, 169, 222, .55);
+      animation: filterPulse 1.8s ease-in-out infinite;
+    }
+    @keyframes filterPulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(112, 169, 222, .55);
+        transform: scale(1);
+      }
+      60% {
+        box-shadow: 0 0 0 7px rgba(112, 169, 222, 0);
+        transform: scale(1.12);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(112, 169, 222, 0);
+        transform: scale(1);
+      }
+    }
+    .panel-body {
+      padding: 2px 18px 12px;
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .charts-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      flex: 1;
+      min-height: 0;
+    }
+    .chart-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px 14px 6px;
+      box-shadow: var(--shadow-out);
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      flex: 1;
+    }
+    .chart-card .chart-title {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--ink);
+      letter-spacing: .02em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+      flex-shrink: 0;
+    }
+    .chart-card .chart-sub {
+      font-size: 11px;
+      color: var(--ink-mute);
+      margin-bottom: 6px;
+      flex-shrink: 0;
+    }
+    .chart-card .plot-container {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .table-wrap {
+      flex: 1;
+      min-height: 0;
+      overflow: auto;
+      margin: 0 -4px 0 -4px;
+      padding: 0 4px;
+    }
+    .table-wrap::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    .table-wrap::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .table-wrap::-webkit-scrollbar-thumb {
+      background: var(--scroll-thumb);
+      border-radius: 99px;
+    }
+    .table-wrap::-webkit-scrollbar-thumb:hover {
+      background: var(--scroll-thumb-hover);
+    }
+    #detail-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      min-width: 700px;
+    }
+    #detail-table th {
+      background: var(--surface-2);
+      color: var(--ink-soft);
+      font-weight: 700;
+      padding: 8px 10px;
+      text-align: left;
+      border-bottom: 2px solid var(--surface-3);
+      white-space: nowrap;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .3px;
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      cursor: pointer;
+      user-select: none;
+      transition: background .15s, color .15s;
+    }
+    #detail-table th:hover {
+      background: var(--surface-3);
+      color: var(--primary);
+    }
+    #detail-table th .sort-icon {
+      margin-left: 6px;
+      opacity: 0.4;
+      font-weight: 700;
+      font-size: 10px;
+    }
+    #detail-table th.sorted .sort-icon {
+      opacity: 1;
+      color: var(--primary);
+    }
+    #detail-table th.sorted {
+      color: var(--primary);
+    }
+    /* Заголовки выровнены по левому краю так же, как содержимое ячеек:
+       в столбцах «План» и «Отклонение» значение стоит перед полосой,
+       поэтому центрирование заголовка смещало его относительно данных */
+    #detail-table td {
+      padding: 6px 10px;
+      border-bottom: 1px solid var(--surface-3);
+      vertical-align: middle;
+      text-align: left;
+    }
+    /* одинаковые горизонтальные отступы у шапки и ячеек */
+    #detail-table th,
+    #detail-table td {
+      padding-left: 10px;
+      padding-right: 10px;
+    }
+    #detail-table tr:hover td {
+      background: var(--surface-2);
+    }
+    /* ── Кроссфильтрация: кликабельные значения ── */
+    #detail-table tbody td.cell-filter,
+    .reason-tag,
+    .decision-badge[data-filter] {
+      cursor: pointer;
+    }
+    #detail-table tbody td.cell-filter:hover,
+    .reason-tag:hover {
+      text-decoration: underline;
+      text-decoration-style: dotted;
+      text-underline-offset: 3px;
+    }
+    .reason-tag {
+      display: inline-block;
+    }
+    /* Жирная черта отделяет блок собственных сил от подрядчиков */
+    #detail-table tbody tr.own-divider td {
+      border-bottom: 3px solid var(--gray);
+    }
+    /* Детализация собственных сил в колонке «Подрядчик» — не кликается */
+    #detail-table tbody td.own-cell {
+      color: var(--ink-mute);
+      font-style: italic;
+    }
+    #detail-table tbody td.cell-filter.filter-active {
+      font-weight: 800;
+      color: var(--primary-active);
+    }
+    .reason-tag.filter-active {
+      font-weight: 800;
+      color: var(--primary-active);
+    }
+    .decision-badge[data-filter]:hover {
+      filter: brightness(1.08);
+    }
+    .decision-badge.filter-active {
+      box-shadow: 0 0 0 2px var(--primary-active);
+    }
+
+    #detail-table tr.is-selected td {
+      background: var(--primary-soft);
+    }
+    .bar-cell {
+      min-width: 100px;
+    }
+    /* Колонки «План» и «Отклонение»: значение должно начинаться
+       ровно от левой границы ячейки, как и текст заголовка.
+       Ширина под число задаётся отдельным блоком .bar-num-slot,
+       чтобы полосы стартовали с одной вертикали во всех строках. */
+    #detail-table td.bar-cell .bar-container,
+    #detail-table td.bar-cell .deviation-container {
+      margin-left: 0;
+      padding-left: 0;
+    }
+    #detail-table td.bar-cell .bar-value,
+    #detail-table td.bar-cell .deviation-value {
+      text-align: left;
+      padding-left: 0;
+      margin-left: 0;
+      text-indent: 0;
+    }
+
+    /* ── Гистограмма отклонения ── */
+    .deviation-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    /* число прижато к левому краю ячейки, чтобы совпадать с заголовком;
+       min-width сохраняет общую точку старта полос во всех строках */
+    .deviation-value {
+      font-weight: 700;
+      font-size: 12px;
+      min-width: 30px;
+      text-align: left;
+      flex-shrink: 0;
+    }
+    .deviation-value.pos {
+      color: var(--success);
+    }
+    .deviation-value.zero {
+      color: var(--success);
+    }
+    .deviation-value.neg {
+      color: var(--danger);
+    }
+
+    .deviation-bar {
+      position: relative;
+      width: 100%;
+      height: 6px;
+      background: var(--surface-3);
+      border-radius: 99px;
+      overflow: hidden;
+      flex: 1;
+    }
+    .deviation-bar .dev-neg,
+    .deviation-bar .dev-pos {
+      position: absolute;
+      top: 0;
+      height: 100%;
+      border-radius: 99px;
+    }
+    .deviation-bar .dev-neg {
+      right: 50%;
+      background: var(--danger);
+    }
+    .deviation-bar .dev-pos {
+      left: 50%;
+      background: var(--success);
+    }
+    .deviation-bar .dev-zero {
+      position: absolute;
+      left: 50%;
+      top: 0;
+      width: 2px;
+      height: 100%;
+      background: var(--ink-dim);
+      transform: translateX(-50%);
+      opacity: 0.6;
+    }
+
+    /* ── Остальные стили таблицы ── */
+    .bar-container {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .bar-bg {
+      height: 6px;
+      background: var(--surface-3);
+      border-radius: 99px;
+      flex: 1;
+      min-width: 40px;
+      overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%;
+      border-radius: 99px;
+      background: var(--primary);
+      transition: width .2s;
+    }
+    .bar-fill.neg {
+      background: var(--danger);
+    }
+    .bar-fill.pos {
+      background: var(--success);
+    }
+    .bar-value {
+      font-weight: 700;
+      font-size: 12px;
+      min-width: 30px;
+      text-align: left;
+      flex-shrink: 0;
+    }
+    .bar-value.neg {
+      color: var(--danger);
+    }
+    .bar-value.pos {
+      color: var(--success);
+    }
+
+    /* ── Плашка качества в таблице ── */
+    .quality-badge {
+      display: inline-block;
+      padding: 2px 12px;
+      border-radius: 99px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #ffffff;
+      letter-spacing: 0.3px;
+    }
+    .quality-badge.high {
+      background: #4A8BBE;
+    }
+    .quality-badge.low {
+      background: #BDC3C7;
+    }
+    /* 4 уровня по шкале 0–5 */
+    .quality-badge.q-good {
+      background: #9DB984;
+    }
+    .quality-badge.q-ok {
+      background: #4A8BBE;
+    }
+    .quality-badge.q-warn {
+      background: #EECB95;
+      color: #6B4E14;
+    }
+    .quality-badge.q-bad {
+      background: #D88188;
+    }
+
+    /* ── Решение руководителя проекта ── */
+    .decision-badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 99px;
+      font-size: 11.5px;
+      font-weight: 800;
+      letter-spacing: 0.2px;
+      white-space: nowrap;
+      color: #ffffff;
+    }
+    /* Шесть вариантов из справочника решений.
+       Две цветовые группы вместо шести разных цветов:
+       красная — санкции, охристая — предупредительные меры,
+       серая — решения нет. Внутри группы отличается насыщенность:
+       чем темнее, тем жёстче. Классы общие для таблицы, резюме,
+       окна критериев и чипов фильтра. */
+    .decision-badge.d-replace {   /* Заменить действующего подрядчика */
+      background: #C0392B;
+    }
+    .decision-badge.d-search {    /* Подрядчик не выбран - нужно найти */
+      background: var(--danger);
+    }
+    .decision-badge.d-claim {     /* Отправить претензию */
+      background: #D9A05B;
+      color: #4A2E08;
+    }
+    .decision-badge.d-notice {    /* Отправить уведомление со сроком */
+      background: var(--warning);
+      color: #6B4E14;
+    }
+    .decision-badge.d-boost {     /* Затребовано усиление */
+      background: #F6E4C4;
+      color: #6B4E14;
+      box-shadow: inset 0 0 0 1px #E0C89B;
+    }
+    .decision-badge.d-none {      /* Не принял решений */
+      background: var(--gray);
+    }
+    /* старые классы оставлены для совместимости */
+    .decision-badge.d-bad {
+      background: var(--danger);
+    }
+    .decision-badge.d-warn {
+      background: var(--warning);
+      color: #6B4E14;
+    }
+    .decision-badge.d-mid {
+      background: var(--gray);
+    }
+
+    /* Цветная точка у чипа решения в окне фильтров */
+    .chip.chip-decision::before {
+      content: '';
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 7px;
+      vertical-align: 1px;
+      background: var(--gray);
+    }
+    .chip.dot-replace::before { background: #C0392B; }
+    .chip.dot-search::before  { background: var(--danger); }
+    .chip.dot-claim::before   { background: #D9A05B; }
+    .chip.dot-notice::before  { background: var(--warning); }
+    .chip.dot-boost::before   { background: #F6E4C4; box-shadow: inset 0 0 0 1px #E0C89B; }
+    .chip.dot-none::before    { background: var(--gray); }
+    .quality-badge.clickable {
+      cursor: pointer;
+      position: relative;
+    }
+    .quality-badge.clickable:hover {
+      filter: brightness(1.08);
+      box-shadow: 0 0 0 2px rgba(74, 139, 190, .35);
+    }
+
+    /* ── Список подрядчиков в резюме ── */
+    .summary-line .decision-badge {
+      margin-bottom: 4px;
+    }
+    .summary-sublist {
+      list-style: none;
+      margin: 6px 0 0 0;
+      padding: 0;
+    }
+    .summary-sublist li {
+      padding: 3px 0;
+      line-height: 1.5;
+    }
+    .summary-sublist .sub-num {
+      display: inline-block;
+      min-width: 16px;
+      font-weight: 800;
+      opacity: .65;
+    }
+    .summary-sublist .sub-meta {
+      color: var(--ink-mute);
+    }
+
+    /* ── Карточка критериев оценки ── */
+    .crit-row {
+      display: flex;
+      gap: 10px;
+      padding: 5px 0;
+      border-bottom: 1px dashed var(--line);
+      font-size: 13px;
+    }
+    .crit-row:last-child {
+      border-bottom: none;
+    }
+    .crit-name {
+      flex: 0 0 40%;
+      font-weight: 700;
+      color: var(--ink-mute);
+    }
+    .crit-val {
+      flex: 1;
+    }
+    .crit-empty {
+      color: var(--ink-mute);
+      font-style: italic;
+    }
+
+    .hbar-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex: 1;
+      justify-content: flex-start;
+      padding: 0 4px 4px 4px;
+      min-height: 0;
+      overflow: hidden;
+    }
+    .hbar-list.empty {
+      justify-content: center;
+      align-items: center;
+    }
+    .hbar-list.empty .empty-message {
+      color: var(--ink-mute);
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .hbar-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      flex-shrink: 0;
+      min-height: 24px;
+    }
+    .hbar-row.is-selected .hbar-fill {
+      box-shadow: var(--shadow-out-xs), 0 0 0 2px var(--primary), 0 0 8px 2px rgba(112, 169, 222, .35);
+    }
+    .hbar-row.is-selected .hbar-name {
+      color: var(--primary);
+      font-weight: 900;
+    }
+    .hbar-name {
+      width: 150px;
+      flex-shrink: 0;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--ink-soft);
+      letter-spacing: 0;
+      line-height: 1.1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .hbar-track {
+      flex: 1;
+      height: 20px;
+      min-height: 16px;
+      background: var(--bg);
+      border-radius: 99px;
+      box-shadow: var(--shadow-in-sm);
+      padding: 2px;
+      display: flex;
+      align-items: center;
+      min-width: 30px;
+    }
+    .hbar-fill {
+      height: 100%;
+      border-radius: 99px;
+      box-shadow: var(--shadow-out-xs);
+      transition: width .9s cubic-bezier(.2, .8, .2, 1);
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 8px;
+      min-width: 30px;
+    }
+    .hbar-fill.deviation-pos {
+      background: var(--success);
+    }
+    .hbar-fill.deviation-pos .hbar-val {
+      color: #ffffff;
+    }
+    .hbar-fill.deviation-neg {
+      background: var(--danger);
+    }
+    .hbar-fill.deviation-neg .hbar-val {
+      color: #ffffff;
+    }
+    .hbar-fill.quality-high {
+      background: var(--chart-quality-color);
+    }
+    .hbar-fill.quality-high .hbar-val {
+      color: #ffffff;
+    }
+    .hbar-fill.quality-low {
+      background: var(--gray);
+    }
+    .hbar-fill.quality-low .hbar-val {
+      color: #ffffff;
+    }
+    .hbar-fill.zero {
+      background: transparent;
+      box-shadow: none;
+      min-width: 0;
+      flex: 0 0 auto;
+      justify-content: flex-start;
+      padding: 0 0 0 8px;
+    }
+    .hbar-fill.zero .hbar-val {
+      color: var(--ink-dim);
+      font-weight: 700;
+    }
+    .hbar-val {
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--ink);
+      white-space: nowrap;
+    }
+
+    /* ── FILTER MODAL ── */
+    .filter-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9997;
+      background: rgba(0, 0, 0, 0);
+      backdrop-filter: blur(0);
+      -webkit-backdrop-filter: blur(0);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .25s, background .25s, backdrop-filter .25s;
+    }
+    .filter-overlay.show {
+      opacity: 1;
+      pointer-events: auto;
+      background: rgba(26, 42, 58, .35);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+    }
+    [data-theme="dark"] .filter-overlay.show {
+      background: rgba(0, 0, 0, .5);
+    }
+    .filter-modal {
+      background: var(--surface);
+      border-radius: 28px;
+      box-shadow: var(--shadow-out);
+      max-width: 780px;
+      width: 100%;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transform: translateY(20px) scale(.98);
+      transition: transform .3s cubic-bezier(.2, .8, .2, 1);
+    }
+    .filter-overlay.show .filter-modal {
+      transform: translateY(0) scale(1);
+    }
+    .filter-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 22px 28px 14px;
+      flex-shrink: 0;
+    }
+    .filter-title {
+      font-size: 18px;
+      font-weight: 900;
+      color: var(--ink);
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+    .filter-title .accent {
+      color: var(--primary);
+    }
+    .filter-body {
+      padding: 0 28px 18px;
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .filter-body::-webkit-scrollbar {
+      width: 8px;
+    }
+    .filter-body::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .filter-body::-webkit-scrollbar-thumb {
+      background: var(--ink-dim);
+      border-radius: 4px;
+      opacity: .4;
+    }
+    .filter-section {
+      background: var(--surface-2);
+      border-radius: 18px;
+      padding: 14px 18px;
+      box-shadow: var(--shadow-out-xs);
+    }
+    .filter-section-title {
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--ink-mute);
+      letter-spacing: .10em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+    .chip-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .chip {
+      background: var(--surface);
+      border: 1px solid transparent;
+      border-radius: 99px;
+      padding: 7px 14px;
+      cursor: pointer;
+      font-family: 'Nunito', 'Helvetica Neue', Arial, sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--ink-soft);
+      box-shadow: var(--shadow-out-xs);
+      transition: background .15s, color .15s, border-color .15s, box-shadow .15s, transform .12s;
+      user-select: none;
+    }
+    .chip:hover {
+      color: var(--primary);
+    }
+    .chip:active {
+      transform: translateY(1px);
+      box-shadow: var(--shadow-in-sm);
+    }
+    .chip.selected {
+      background: var(--primary);
+      color: var(--on-primary);
+      border-color: var(--primary);
+      box-shadow: var(--shadow-in-sm);
+    }
+    .filter-foot {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 14px 28px 22px;
+      flex-shrink: 0;
+      border-top: 1px solid var(--border);
+    }
+    .filter-foot-info {
+      font-size: 11.5px;
+      color: var(--ink-mute);
+      font-weight: 700;
+      letter-spacing: .04em;
+    }
+    .filter-foot-actions {
+      display: flex;
+      gap: 10px;
+    }
+    .filter-clear-btn {
+      background: var(--surface);
+      border: none;
+      border-radius: 99px;
+      padding: 9px 18px;
+      cursor: pointer;
+      font-family: 'Nunito', 'Helvetica Neue', Arial, sans-serif;
+      font-size: 11.5px;
+      font-weight: 800;
+      color: var(--primary);
+      letter-spacing: .07em;
+      text-transform: uppercase;
+      box-shadow: var(--shadow-out-xs);
+      transition: box-shadow .15s, transform .15s;
+    }
+    .filter-clear-btn:hover {
+      box-shadow: var(--shadow-out-sm);
+    }
+    .filter-clear-btn:active {
+      box-shadow: var(--shadow-in-sm);
+      transform: translateY(1px);
+    }
+
+    /* ── КАСТОМНЫЙ КАЛЕНДАРЬ ── */
+    .custom-date-picker {
+      position: relative;
+      display: flex;
+      align-items: center;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px 10px;
+      color: var(--ink);
+      font-family: 'Nunito', 'Helvetica Neue', Arial, sans-serif;
+      font-weight: 700;
+      width: 100%;
+      transition: border-color .2s, box-shadow .2s;
+      cursor: pointer;
+    }
+    .custom-date-picker:hover {
+      border-color: var(--primary);
+    }
+    .custom-date-picker.focused {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(112, 169, 222, 0.25);
+    }
+    .custom-date-picker .date-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--ink);
+      font-family: 'Nunito', 'Helvetica Neue', Arial, sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 0;
+      min-width: 0;
+    }
+    .custom-date-picker .date-input::placeholder {
+      color: var(--ink-dim);
+      font-weight: 400;
+    }
+    .custom-date-picker .calendar-icon {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+      margin-left: 6px;
+      stroke: var(--ink-mute);
+      transition: stroke .2s;
+      cursor: pointer;
+    }
+    .custom-date-picker:hover .calendar-icon {
+      stroke: var(--primary);
+    }
+
+    .date-picker-popup {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      z-index: 100;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: var(--shadow-out);
+      padding: 12px 16px;
+      width: 260px;
+      display: none;
+      font-family: 'Nunito', 'Helvetica Neue', Arial, sans-serif;
+      user-select: none;
+    }
+    .date-picker-popup.open {
+      display: block;
+    }
+    .date-picker-popup .picker-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .date-picker-popup .picker-header .month-year {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--ink);
+    }
+    .date-picker-popup .picker-header .nav-btn {
+      background: none;
+      border: none;
+      color: var(--ink-mute);
+      font-size: 18px;
+      cursor: pointer;
+      padding: 0 6px;
+      transition: color .2s;
+      font-weight: 700;
+    }
+    .date-picker-popup .picker-header .nav-btn:hover {
+      color: var(--primary);
+    }
+    .date-picker-popup .weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 2px;
+      margin-bottom: 6px;
+    }
+    .date-picker-popup .weekdays span {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--ink-mute);
+      text-align: center;
+      text-transform: uppercase;
+    }
+    .date-picker-popup .days-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 2px;
+    }
+    .date-picker-popup .day-cell {
+      aspect-ratio: 1 / 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--ink-soft);
+      border-radius: 50%;
+      cursor: pointer;
+      transition: background .15s, color .15s;
+      background: transparent;
+    }
+    .date-picker-popup .day-cell:hover {
+      background: var(--primary-soft);
+      color: var(--primary);
+    }
+    .date-picker-popup .day-cell.selected {
+      background: var(--primary);
+      color: var(--on-primary);
+    }
+    .date-picker-popup .day-cell.other-month {
+      color: var(--ink-dim);
+      opacity: 0.5;
+      pointer-events: none;
+    }
+    .date-picker-popup .day-cell.today {
+      border: 1px solid var(--primary);
+    }
+
+    /* ── EXECUTIVE SUMMARY MODAL ── */
+    .summary-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9998;
+      background: rgba(0, 0, 0, 0);
+      backdrop-filter: blur(0);
+      -webkit-backdrop-filter: blur(0);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .25s, background .25s, backdrop-filter .25s;
+    }
+    .summary-overlay.show {
+      opacity: 1;
+      pointer-events: auto;
+      background: rgba(26, 42, 58, .35);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+    }
+    [data-theme="dark"] .summary-overlay.show {
+      background: rgba(0, 0, 0, .5);
+    }
+    .summary-modal {
+      background: var(--surface);
+      border-radius: 28px;
+      box-shadow: var(--shadow-out);
+      max-width: 780px;
+      width: 100%;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transform: translateY(20px) scale(.98);
+      transition: transform .3s cubic-bezier(.2, .8, .2, 1);
+    }
+    .summary-overlay.show .summary-modal {
+      transform: translateY(0) scale(1);
+    }
+    .summary-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 22px 28px 14px;
+      flex-shrink: 0;
+    }
+    .summary-title {
+      font-size: 18px;
+      font-weight: 900;
+      color: var(--ink);
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+    .summary-title .accent {
+      color: var(--primary);
+    }
+    .summary-close {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--surface);
+      border: none;
+      box-shadow: var(--shadow-out-xs);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--ink-soft);
+      transition: box-shadow .15s, transform .15s;
+    }
+    .summary-close:hover {
+      color: var(--ink);
+    }
+    .summary-close:active {
+      box-shadow: var(--shadow-in-sm);
+      transform: translateY(1px);
+    }
+    .summary-close svg {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+      fill: none;
+    }
+    .summary-body {
+      padding: 10px 28px 22px;
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .summary-body::-webkit-scrollbar {
+      width: 8px;
+    }
+    .summary-body::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .summary-body::-webkit-scrollbar-thumb {
+      background: var(--ink-dim);
+      border-radius: 4px;
+      opacity: .4;
+    }
+    .summary-section {
+      background: var(--surface-2);
+      border-radius: 18px;
+      padding: 14px 18px;
+      box-shadow: var(--shadow-out-xs);
+    }
+    .summary-section-title {
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--ink-mute);
+      letter-spacing: .10em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .summary-line {
+      position: relative;
+      padding: 6px 0 6px 18px;
+      font-size: 14px;
+      line-height: 1.45;
+      color: var(--ink);
+      font-weight: 500;
+    }
+    .summary-line+.summary-line {
+      border-top: 1px dashed var(--ink-dim);
+    }
+    .summary-line::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 13px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--ink-dim);
+    }
+    .summary-line.pos::before {
+      background: var(--success);
+    }
+    .summary-line.neg::before {
+      background: var(--danger);
+    }
+    .summary-line.neu::before {
+      background: var(--warning);
+    }
+    .summary-line strong {
+      color: var(--ink);
+      font-weight: 800;
+    }
+    .summary-line .v-pos {
+      color: var(--success);
+      font-weight: 800;
+    }
+    .summary-line .v-neg {
+      color: var(--danger);
+      font-weight: 800;
+    }
+    .summary-foot {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 14px 28px 22px;
+      flex-shrink: 0;
+      border-top: 1px solid var(--border);
+    }
+    .summary-foot-info {
+      font-size: 11.5px;
+      color: var(--ink-mute);
+      font-weight: 700;
+      letter-spacing: .04em;
+    }
+    .summary-foot .btn-group {
+      display: flex;
+      gap: 8px;
+    }
+    .summary-foot button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--primary);
+      padding: 6px 12px;
+      border-radius: 40px;
+      background: var(--surface-2);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .04em;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background .15s, box-shadow .15s;
+      font-family: 'Nunito', 'Helvetica Neue', Arial, sans-serif;
+    }
+    .summary-foot button:hover {
+      background: var(--primary-soft);
+      box-shadow: 0 0 0 1px var(--primary);
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 9999;
+      background: var(--surface);
+      border: 1px solid var(--primary);
+      border-radius: 16px;
+      padding: 12px 24px;
+      box-shadow: var(--shadow-out);
+      font-family: 'Nunito', 'Helvetica Neue', Arial, sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      opacity: 0;
+      transition: opacity .4s, transform .4s;
+      pointer-events: none;
+      max-width: 500px;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+    .toast.success .toast-icon {
+      color: var(--success);
+    }
+    .toast.error .toast-icon {
+      color: var(--danger);
+    }
+    .toast .toast-icon {
+      font-size: 20px;
+    }
+
+    ::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--scroll-thumb);
+      border-radius: 99px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--scroll-thumb-hover);
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 1200px) {
+      .canvas {
+        padding: 16px 20px 12px;
+        gap: 10px;
+      }
+      .kpi-row {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .panels-grid {
+        grid-template-columns: 1fr;
+      }
+      .charts-stack {
+        flex-direction: column;
+      }
+      h1 {
+        font-size: 24px;
+      }
+      .date-picker-popup {
+        width: 220px;
+      }
+      .kpi-num {
+        font-size: 38px;
+      }
+      .kpi-donut {
+        width: 56px;
+        height: 56px;
+      }
+      .kpi-donut .donut-bg,
+      .kpi-donut .donut-segment {
+        stroke-width: 13;
+      }
+      .hbar-name {
+        width: 120px;
+        font-size: 11px;
+      }
+      .hbar-track {
+        height: 18px;
+      }
+      .hbar-fill {
+        min-width: 26px;
+        padding-right: 6px;
+      }
+      .hbar-val {
+        font-size: 10px;
+      }
+      .hbar-row {
+        gap: 8px;
+        min-height: 22px;
+      }
+    }
+    @media (max-width: 768px) {
+      .canvas {
+        padding: 10px 12px 8px;
+        gap: 8px;
+      }
+      .topbar {
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .title-block h1 {
+        font-size: 18px;
+      }
+      .h1-sub {
+        font-size: 13px;
+      }
+      .topbar-actions {
+        gap: 6px;
+      }
+      .btn-icon,
+      .btn-update,
+      .btn-reset,
+      .theme-toggle {
+        width: 32px;
+        height: 32px;
+      }
+      .btn-icon svg,
+      .btn-update svg,
+      .btn-reset svg,
+      .theme-toggle svg {
+        width: 16px;
+        height: 16px;
+      }
+      .kpi-row {
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+      .kpi {
+        padding: 10px 12px;
+      }
+      .kpi-num {
+        font-size: 30px;
+      }
+      .kpi-label {
+        font-size: 11px;
+      }
+      .kpi-tag {
+        font-size: 9px;
+        padding: 2px 8px;
+      }
+      .panels-grid {
+        gap: 8px;
+      }
+      .panel-head {
+        padding: 8px 12px;
+      }
+      .panel-title {
+        font-size: 12px;
+      }
+      .panel-body {
+        padding: 0 8px 8px;
+      }
+      .chart-card {
+        padding: 6px 8px;
+      }
+      .chart-title {
+        font-size: 11px;
+      }
+      .chart-card .chart-sub {
+        font-size: 10px;
+      }
+      .hbar-name {
+        width: 90px;
+        font-size: 10px;
+      }
+      .hbar-track {
+        height: 16px;
+        padding: 2px;
+      }
+      .hbar-fill {
+        min-width: 22px;
+        padding-right: 5px;
+      }
+      .hbar-val {
+        font-size: 9px;
+      }
+      .hbar-row {
+        gap: 6px;
+        min-height: 20px;
+      }
+      .hbar-list {
+        gap: 3px;
+      }
+      .top-controls {
+        flex-wrap: wrap;
+      }
+      .top-slider {
+        min-width: 60px;
+      }
+      #detail-table {
+        font-size: 10px;
+        min-width: 500px;
+      }
+      #detail-table th,
+      #detail-table td {
+        padding: 4px 6px;
+      }
+      .bar-cell {
+        min-width: 60px;
+      }
+      .summary-modal,
+      .filter-modal {
+        max-width: 100%;
+        margin: 10px;
+        border-radius: 16px;
+      }
+      .date-picker-popup {
+        width: 200px;
+        left: auto;
+        right: 0;
+      }
+      .kpi-donut {
+        width: 44px;
+        height: 44px;
+      }
+      .kpi-donut .donut-bg,
+      .kpi-donut .donut-segment {
+        stroke-width: 10;
+      }
+      .kpi-main-percent {
+        gap: 16px;
+      }
+    }
+    @media (max-width: 480px) {
+      .canvas {
+        padding: 6px 8px;
+      }
+      .kpi-row {
+        grid-template-columns: 1fr 1fr;
+        gap: 4px;
+      }
+      .kpi {
+        padding: 6px 8px;
+      }
+      .kpi-num {
+        font-size: 24px;
+      }
+      .kpi-main {
+        margin-top: 4px;
+        flex-wrap: wrap;
+      }
+      .hbar-name {
+        width: 65px;
+        font-size: 8px;
+      }
+      .hbar-track {
+        height: 14px;
+        padding: 2px;
+      }
+      .hbar-fill {
+        min-width: 18px;
+        padding-right: 4px;
+      }
+      .hbar-val {
+        font-size: 8px;
+      }
+      .hbar-row {
+        gap: 5px;
+        min-height: 18px;
+      }
+      .hbar-list {
+        gap: 2px;
+      }
+      .chart-card .chart-sub {
+        font-size: 9px;
+      }
+      .top-label {
+        font-size: 9px;
+      }
+      .date-picker-popup {
+        width: 180px;
+      }
+      .kpi-donut {
+        width: 36px;
+        height: 36px;
+      }
+      .kpi-donut .donut-bg,
+      .kpi-donut .donut-segment {
+        stroke-width: 8;
+      }
+      .kpi-main-percent {
+        gap: 12px;
+      }
+    }
+
+    /* ── TOP CONTROLS ── */
+    .top-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 4px 6px 4px;
+      flex-shrink: 0;
+      flex-wrap: wrap;
+    }
+    .top-controls .top-label {
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--gray);
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      transition: color .2s;
+    }
+    .top-controls .top-label.active {
+      color: var(--primary);
+    }
+    .top-slider {
+      flex: 1;
+      -webkit-appearance: none;
+      appearance: none;
+      height: 4px;
+      border-radius: 99px;
+      background: var(--surface-3);
+      border: 1px solid var(--gray);
+      box-shadow: inset 0 0 6px rgba(189, 195, 199, .25);
+      outline: none;
+      cursor: pointer;
+      min-width: 40px;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .top-slider.active {
+      border-color: var(--primary);
+      box-shadow: inset 0 0 6px rgba(112, 169, 222, .25);
+    }
+    .top-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--gray);
+      border: 2px solid var(--gray);
+      box-shadow: 0 0 8px rgba(189, 195, 199, .4);
+      cursor: pointer;
+      transition: box-shadow .15s, transform .12s, background .2s, border-color .2s;
+    }
+    .top-slider.active::-webkit-slider-thumb {
+      background: var(--primary);
+      border-color: var(--primary);
+      box-shadow: 0 0 8px rgba(112, 169, 222, .6);
+    }
+    .top-slider::-webkit-slider-thumb:hover {
+      transform: scale(1.08);
+    }
+    .top-slider::-moz-range-thumb {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: 2px solid var(--gray);
+      background: var(--gray);
+      box-shadow: 0 0 8px rgba(189, 195, 199, .4);
+      cursor: pointer;
+    }
+    .top-slider.active::-moz-range-thumb {
+      border-color: var(--primary);
+      background: var(--primary);
+      box-shadow: 0 0 8px rgba(112, 169, 222, .6);
+    }
+
+    .top-count-badge {
+      min-width: 20px;
+      height: 20px;
+      padding: 0 6px;
+      background: var(--gray);
+      color: #ffffff;
+      border-radius: 99px;
+      font-size: 10px;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 8px rgba(189, 195, 199, .3);
+      flex-shrink: 0;
+      transition: background .2s, box-shadow .2s;
+    }
+    .top-count-badge.active {
+      background: var(--primary);
+      box-shadow: 0 0 8px rgba(112, 169, 222, .45);
+    }
+    .top-count-badge.anti-mode {
+      background: var(--gray);
+      box-shadow: 0 0 8px rgba(189, 195, 199, .3);
+    }
+
+    .top-ctrl-sep {
+      width: 1px;
+      height: 16px;
+      background: var(--gray);
+      opacity: .45;
+      margin: 0 4px;
+      flex-shrink: 0;
+      transition: background .2s;
+    }
+    .top-ctrl-sep.active {
+      background: var(--primary);
+    }
+
+    /* ── ANTI-TOGGLE ── */
+    .anti-toggle {
+      display: flex;
+      flex-direction: row-reverse;
+      align-items: center;
+      gap: 7px;
+      cursor: pointer;
+      user-select: none;
+      flex-shrink: 0;
+    }
+    .anti-toggle input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+      width: 0;
+      height: 0;
+    }
+    .anti-track {
+      position: relative;
+      width: 36px;
+      height: 20px;
+      background: var(--surface-3);
+      border: 1px solid var(--gray);
+      border-radius: 99px;
+      box-shadow: inset 0 0 6px rgba(189, 195, 199, .2);
+      flex-shrink: 0;
+      transition: background .25s, border-color .25s;
+    }
+    .anti-knob {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 14px;
+      height: 14px;
+      background: var(--gray);
+      border-radius: 50%;
+      box-shadow: 0 0 6px rgba(189, 195, 199, .4);
+      transition: left .25s, background .25s, box-shadow .25s;
+    }
+    .anti-toggle input:checked+.anti-track {
+      background: rgba(216, 129, 136, .12);
+      border-color: var(--gray);
+    }
+    .anti-toggle input:checked+.anti-track .anti-knob {
+      left: 20px;
+      background: var(--gray);
+      box-shadow: 0 0 8px rgba(189, 195, 199, .4);
+    }
+    .anti-toggle input:not(:checked)+.anti-track .anti-knob {
+      background: var(--primary);
+      box-shadow: 0 0 6px rgba(112, 169, 222, .4);
+    }
+    .anti-toggle input:not(:checked)+.anti-track {
+      border-color: var(--primary);
+      background: rgba(112, 169, 222, .08);
+    }
+    .anti-label {
+      font-size: 10px;
+      font-weight: 800;
+      color: var(--gray);
+      letter-spacing: .07em;
+      text-transform: uppercase;
+      transition: color .2s;
+      white-space: nowrap;
+    }
+    .anti-toggle input:checked~.anti-label {
+      color: var(--gray);
+    }
+    .anti-toggle input:not(:checked)~.anti-label {
+      color: var(--primary);
+    }
+
+    .btn-with-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0 16px 0 10px;
+      height: 42px;
+      border-radius: 99px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-out-sm);
+      cursor: pointer;
+      color: var(--ink-soft);
+      font-family: 'Nunito', 'Helvetica Neue', Arial, sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      transition: box-shadow .18s, color .18s, transform .18s, border-color .18s;
+      flex-shrink: 0;
+      letter-spacing: .02em;
+      text-transform: uppercase;
+    }
+    .btn-with-label:hover {
+      color: var(--primary);
+      border-color: var(--primary);
+      box-shadow: 0 0 12px rgba(112, 169, 222, .30);
+    }
+    .btn-with-label:active {
+      transform: translateY(1px);
+    }
+    .btn-with-label svg {
+      width: 20px;
+      height: 20px;
+      display: block;
+      stroke: currentColor;
+      fill: none;
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="canvas" id="canvas">
+    <!-- HEADER -->
+    <div class="topbar">
+      <div class="title-block">
+        <h1 id="mainTitle">ОТЧЕТ ПО <span class="accent">ЛЮДЯМ</span></h1>
+        <div class="h1-sub" id="subtitle">Загрузите Excel-файл для отображения данных</div>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn-with-label" id="btnPngReport" title="Скачать дашборд (PNG)">
+          <svg viewBox="0 0 24 24" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
+          </svg>
+          скачать дашборд
+        </button>
+        <div class="btn-filter-wrap">
+          <button class="btn-update" id="btnFilters" title="Фильтры">
+            <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none">
+              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+            </svg>
+          </button>
+          <span class="filter-badge" id="filterBadge">0</span>
+        </div>
+        <button class="btn-reset" id="btnReset" title="Сбросить фильтры">
+          <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none">
+            <path d="M3 4h18l-7 8v6l-4 2v-8L3 4z" />
+            <line x1="3" y1="21" x2="21" y2="3" />
+          </svg>
+        </button>
+        <button class="btn-icon" id="btnSummary" title="Краткое резюме">
+          <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <line x1="8" y1="13" x2="16" y2="13" />
+            <line x1="8" y1="17" x2="13" y2="17" />
+          </svg>
+        </button>
+        <button class="btn-update" id="btnUpdate" title="Загрузить данные">
+          <svg viewBox="0 0 24 24" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10" />
+            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+          </svg>
+        </button>
+        <button class="theme-toggle" id="themeToggle" title="Сменить тему">
+          <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.2" /><path d="M12 2.5v2M12 19.5v2M4.6 4.6l1.5 1.5M17.9 17.9l1.5 1.5M2.5 12h2M19.5 12h2M4.6 19.4l1.5-1.5M17.9 6.1l1.5-1.5" /></svg>
+          <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg>
+        </button>
+        <input type="file" id="fileInput" accept=".xlsm,.xlsx,.xls" style="display:none;">
+      </div>
+    </div>
+
+    <!-- KPI ROW -->
+    <div class="kpi-row" id="kpiRow">
+      <div class="kpi" data-metric="plan">
+        <div class="kpi-label">План <span class="kpi-tag">чел.</span></div>
+        <div class="kpi-main kpi-main-center">
+          <div class="kpi-numwrap"><div class="kpi-num" id="kpiPlan">0</div></div>
+        </div>
+      </div>
+      <div class="kpi" data-metric="fact">
+        <div class="kpi-label">Факт <span class="kpi-tag">чел.</span></div>
+        <div class="kpi-main kpi-main-center">
+          <div class="kpi-numwrap"><div class="kpi-num" id="kpiFact">0</div></div>
+        </div>
+      </div>
+      <div class="kpi" data-metric="percent" id="kpiPercentCard">
+        <div class="kpi-label">Выполнение <span class="kpi-tag" id="pctTag">%</span></div>
+        <div class="kpi-main kpi-main-percent">
+          <div class="kpi-numwrap"><div class="kpi-num" id="kpiPercent">0%</div></div>
+          <div class="kpi-donut-wrap">
+            <div class="kpi-donut" id="kpiDonut">
+              <svg viewBox="0 0 72 72">
+                <g transform="rotate(-90 36 36)">
+                  <circle class="donut-bg" cx="36" cy="36" r="28" />
+                  <circle class="donut-segment" id="donutSegment" cx="36" cy="36" r="28"
+                    stroke-dasharray="0 175.93" stroke-dashoffset="0" />
+                </g>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="kpi" data-metric="quality">
+        <div class="kpi-label">Сред. качество <span class="kpi-tag">балл</span></div>
+        <div class="kpi-main kpi-main-center">
+          <div class="kpi-numwrap"><div class="kpi-num" id="kpiQuality">0</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABLE + CHARTS -->
+    <div class="panels-grid">
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title">Детализация <span class="panel-unit" id="unitTable">чел.</span></div>
+          <div class="panel-sub corner">план / отклонение</div>
+        </div>
+        <div class="panel-body" style="padding:0 14px 8px;">
+          <div class="table-wrap" id="tableWrap">
+            <table id="detail-table">
+              <thead>
+                <tr>
+                  <th data-sort="work">Вид работы <span class="sort-icon"></span></th>
+                  <th data-sort="contractor">Подрядчик <span class="sort-icon"></span></th>
+                  <th data-sort="quality">Качество <span class="sort-icon"></span></th>
+                  <th data-sort="decision">Решение <span class="sort-icon"></span></th>
+                  <th data-sort="plan">План <span class="sort-icon"></span></th>
+                  <th data-sort="deviation">Отклонение <span class="sort-icon"></span></th>
+                  <th data-sort="reasons">Причина <span class="sort-icon"></span></th>
+                </tr>
+              </thead>
+              <tbody id="tableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" style="padding:0;">
+        <div class="charts-stack">
+          <div class="chart-card">
+            <div class="chart-title"><span id="topNegTitle">АНТИРЕЙТИНГ 10</span> подрядчиков по кол-ву людей <span class="panel-unit" id="unitTopNeg">чел.</span></div>
+            <div class="chart-sub" id="topNegSub">отклонение (факт − план)</div>
+            <div class="plot-container" id="chartNeg">
+              <div class="top-controls">
+                <span class="top-label" id="negTopLabel">Топ</span>
+                <input type="range" id="topNegSlider" min="1" max="10" value="10" step="1" class="top-slider" id="negSlider">
+                <span class="top-count-badge" id="negCountBadge">АНТИРЕЙТИНГ 10</span>
+                <span class="top-ctrl-sep" id="negSep"></span>
+                <label class="anti-toggle" id="negAntiToggle" title="Антирейтинг">
+                  <input type="checkbox" id="negAnti" checked>
+                  <div class="anti-track"><div class="anti-knob"></div></div>
+                  <span class="anti-label">АНТИРЕЙТИНГ</span>
+                </label>
+              </div>
+              <div class="hbar-list" id="negBars"></div>
+            </div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title"><span id="topQualTitle">АНТИРЕЙТИНГ 10</span> подрядчиков по качеству <span class="panel-unit" id="unitTopQual">балл</span></div>
+            <div class="chart-sub">средняя оценка</div>
+            <div class="plot-container" id="chartQuality">
+              <div class="top-controls">
+                <span class="top-label" id="qualTopLabel">Топ</span>
+                <input type="range" id="topQualSlider" min="1" max="10" value="10" step="1" class="top-slider" id="qualSlider">
+                <span class="top-count-badge" id="qualCountBadge">АНТИРЕЙТИНГ 10</span>
+                <span class="top-ctrl-sep" id="qualSep"></span>
+                <label class="anti-toggle" id="qualAntiToggle" title="Антирейтинг">
+                  <input type="checkbox" id="qualAnti" checked>
+                  <div class="anti-track"><div class="anti-knob"></div></div>
+                  <span class="anti-label">АНТИРЕЙТИНГ</span>
+                </label>
+              </div>
+              <div class="hbar-list" id="qualBars"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter Modal -->
+  <div class="filter-overlay" id="filterOverlay" aria-hidden="true">
+    <div class="filter-modal" role="dialog" aria-labelledby="filterTitle">
+      <div class="filter-head">
+        <div class="filter-title" id="filterTitle"><span class="accent">Фильтры</span> данных</div>
+        <button class="summary-close" id="filterClose" aria-label="Закрыть">
+          <svg viewBox="0 0 24 24" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none">
+            <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      </div>
+      <div class="filter-body" id="filterBody">
+        <div class="filter-section">
+          <div class="filter-section-title">Дата</div>
+          <div>
+            <div class="custom-date-picker" id="customDatePicker">
+              <input type="text" class="date-input" id="filterDateInput" placeholder="Выберите дату" readonly>
+              <svg class="calendar-icon" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                <line x1="16" y1="2" x2="16" y2="6" />
+                <line x1="8" y1="2" x2="8" y2="6" />
+                <line x1="3" y1="10" x2="21" y2="10" />
+              </svg>
+              <div class="date-picker-popup" id="datePickerPopup">
+                <div class="picker-header">
+                  <button class="nav-btn" data-dir="-1">‹</button>
+                  <span class="month-year" id="pickerMonthYear">Май 2026</span>
+                  <button class="nav-btn" data-dir="1">›</button>
+                </div>
+                <div class="weekdays">
+                  <span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span>
+                </div>
+                <div class="days-grid" id="daysGrid"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="filter-section">
+          <div class="filter-section-title">Подрядчики</div>
+          <div class="chip-group" id="filterContractors"></div>
+        </div>
+        <div class="filter-section">
+          <div class="filter-section-title">Вид работы</div>
+          <div class="chip-group" id="filterWorkTypes"></div>
+        </div>
+        <div class="filter-section">
+          <div class="filter-section-title">Причина</div>
+          <div class="chip-group" id="filterReasons"></div>
+        </div>
+        <div class="filter-section">
+          <div class="filter-section-title">Решение</div>
+          <div class="chip-group" id="filterDecisions"></div>
+        </div>
+      </div>
+      <div class="filter-foot">
+        <span class="filter-foot-info" id="filterFootInfo">Активных фильтров: 0</span>
+        <div class="filter-foot-actions">
+          <button class="filter-clear-btn" id="filterClearBtn">Очистить</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Executive Summary Modal -->
+  <div class="summary-overlay" id="summaryOverlay" aria-hidden="true">
+    <div class="summary-modal" role="dialog" aria-labelledby="summaryTitle">
+      <div class="summary-head">
+        <div class="summary-title" id="summaryTitle">Краткое <span class="accent">резюме</span></div>
+        <button class="summary-close" id="summaryClose" aria-label="Закрыть">
+          <svg viewBox="0 0 24 24" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none">
+            <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      </div>
+      <div class="summary-body" id="summaryBody"></div>
+      <div class="summary-foot">
+        <span class="summary-foot-info" id="summaryFootInfo"></span>
+        <div class="btn-group">
+          <button id="summaryPngBtn" title="Скачать в PNG">
+            <svg viewBox="0 0 24 24" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            PNG
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Criteria Modal -->
+  <div class="summary-overlay" id="critOverlay" aria-hidden="true">
+    <div class="summary-modal" role="dialog" aria-labelledby="critTitle">
+      <div class="summary-head">
+        <div class="summary-title" id="critTitle">Критерии <span class="accent">оценки</span></div>
+        <button class="summary-close" id="critClose" aria-label="Закрыть">
+          <svg viewBox="0 0 24 24" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none">
+            <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      </div>
+      <div class="summary-body" id="critBody"></div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast">
+    <span class="toast-icon">✓</span>
+    <span class="toast-text" id="toastText"></span>
+  </div>
+
+  <script>
+    // ─── DATA ───────────────────────────────────────────────────────────────
+    let allRows = [];
+    let filteredRows = [];
+    let currentDate = null;
+    let availableDates = [];
+    let currentObjectName = null; // имя объекта из первой строки
+
+    // ─── ШКАЛА ОЦЕНКИ 0–5 (совпадает с листом «Критерии оценки») ───────────
+    const QUALITY_SCALE = [
+      { min: 4.5, level: 'Отлично',          cls: 'q-good', tone: 'pos' },
+      { min: 3.5, level: 'Хорошо',           cls: 'q-ok',   tone: 'pos' },
+      { min: 2.5, level: 'Требует внимания', cls: 'q-warn', tone: 'neu' },
+      { min: -1,  level: 'Критично',         cls: 'q-bad',  tone: 'neg' },
+    ];
+
+    function qualityGrade(v) {
+      if (v === null || v === undefined || isNaN(v)) return null;
+      return QUALITY_SCALE.find(g => v >= g.min) || QUALITY_SCALE[QUALITY_SCALE.length - 1];
+    }
+
+    // Решение РП приходит из столбца «РЕШЕНИЕ» плоской таблицы.
+    // Порядок в списке важен: ищется первое совпадение по подстроке,
+    // поэтому более жёсткие формулировки стоят выше.
+    // Ранг задаёт сортировку в таблице и порядок списков в резюме.
+    const DECISION_STYLES = [
+      { match: 'замен',      rank: 6, cls: 'd-replace', dot: 'dot-replace' },
+      { match: 'не выбран',  rank: 5, cls: 'd-search',  dot: 'dot-search'  },
+      { match: 'претенз',    rank: 4, cls: 'd-claim',   dot: 'dot-claim'   },
+      { match: 'уведомлен',  rank: 3, cls: 'd-notice',  dot: 'dot-notice'  },
+      { match: 'усилен',     rank: 2, cls: 'd-boost',   dot: 'dot-boost'   },
+      { match: 'не принял',  rank: 1, cls: 'd-none',    dot: 'dot-none'    },
+      { match: 'приостанов', rank: 6, cls: 'd-replace', dot: 'dot-replace' },
+    ];
+    const DECISION_DEFAULT = { rank: 1, cls: 'd-none', dot: 'dot-none' };
+
+    function decisionMeta(text) {
+      const t = String(text || '').trim().toLowerCase();
+      if (!t) return { rank: 0, cls: 'd-none', dot: 'dot-none' };
+      for (let i = 0; i < DECISION_STYLES.length; i++) {
+        if (t.indexOf(DECISION_STYLES[i].match) !== -1) return DECISION_STYLES[i];
+      }
+      return DECISION_DEFAULT;
+    }
+
+    function decisionRank(text) {
+      return decisionMeta(text).rank;
+    }
+
+    function decisionClass(text) {
+      return decisionMeta(text).cls;
+    }
+
+    // Столбцы выбранных фактов в плоской таблице
+    const CRIT_FIELDS = [
+      { key: 'critQuality',    label: 'Качество выполнения работ' },
+      { key: 'critDiscipline', label: 'Дисциплина (ТБ, СИЗ)' },
+      { key: 'critPeople',     label: 'Количество людей на объекте' },
+      { key: 'critOutput',     label: 'Выполнение объёма' },
+      { key: 'critClean',      label: 'Чистота на рабочем месте' },
+    ];
+
+    // Самое жёсткое решение из набора
+    function hardestDecision(set) {
+      let best = '', bestRank = 0;
+      set.forEach(v => {
+        const rk = decisionRank(v);
+        if (rk > bestRank) { bestRank = rk; best = v; }
+      });
+      return best;
+    }
+
+    const kpiPlan = document.getElementById('kpiPlan');
+    const kpiFact = document.getElementById('kpiFact');
+    const kpiPercent = document.getElementById('kpiPercent');
+    const kpiPercentCard = document.getElementById('kpiPercentCard');
+    const kpiQuality = document.getElementById('kpiQuality');
+    const tableBody = document.getElementById('tableBody');
+    const tableWrap = document.getElementById('tableWrap');
+    const donutSegment = document.getElementById('donutSegment');
+
+    const CIRCUMFERENCE = 2 * Math.PI * 28;
+
+    // ─── FILTERS STATE ────────────────────────────────────────────────────
+    const FILTERS = {
+      date: null,
+      contractors: [],
+      workTypes: [],
+      reasons: [],
+      decisions: [],
+    };
+
+    // ─── SORT STATE ────────────────────────────────────────────────────────
+    let sortField = null; // 'work', 'contractor', 'quality', 'plan', 'deviation', 'reasons'
+    let sortAsc = true;
+
+    // ─── HELPERS ──────────────────────────────────────────────────────────
+    function showToast(msg, type = 'success') {
+      const t = document.getElementById('toast');
+      const icon = t.querySelector('.toast-icon');
+      const text = document.getElementById('toastText');
+      t.className = 'toast ' + type;
+      icon.textContent = type === 'success' ? '✓' : '✕';
+      text.textContent = msg;
+      t.classList.add('show');
+      clearTimeout(t._hide);
+      t._hide = setTimeout(() => t.classList.remove('show'), 3000);
+    }
+
+    function formatDate(d) {
+      if (!d) return '';
+      const dt = new Date(d);
+      const year = dt.getFullYear();
+      const month = String(dt.getMonth() + 1).padStart(2, '0');
+      const day = String(dt.getDate()).padStart(2, '0');
+      return year + '-' + month + '-' + day;
+    }
+
+    function formatDateDisplay(d) {
+      if (!d) return '';
+      const dt = new Date(d);
+      return dt.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    }
+
+    function formatDateFull(d) {
+      if (!d) return '';
+      const dt = new Date(d);
+      return dt.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    }
+
+    function parseExcelDate(val) {
+      if (!val) return null;
+      if (typeof val === 'number') {
+        const d = new Date((val - 25569) * 86400 * 1000);
+        if (!isNaN(d)) return d;
+      }
+      const d = new Date(val);
+      if (!isNaN(d)) return d;
+      return null;
+    }
+
+    // ─── LOAD XLSX ────────────────────────────────────────────────────────
+    function setupFileInput() {
+      const input = document.getElementById('fileInput');
+      const subtitle = document.getElementById('subtitle');
+
+      document.getElementById('btnUpdate').addEventListener('click', function() {
+        input.click();
+      });
+
+      input.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+          try {
+            const data = new Uint8Array(ev.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            let sheetName = 'Форма отчета';
+            let sheet = workbook.Sheets[sheetName];
+            if (!sheet) {
+              const first = workbook.SheetNames[0];
+              sheet = workbook.Sheets[first];
+              sheetName = first;
+            }
+            const raw = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+
+            // --- Извлечение объекта из первой строки (поиск "ОБЪЕКТ") ---
+            let objectName = null;
+            if (raw.length > 0) {
+              const headerRow = raw[0];
+              for (let i = 0; i < headerRow.length; i++) {
+                const cell = String(headerRow[i] || '').trim().toLowerCase();
+                if (cell === 'объект') {
+                  // Название объекта — ближайшая непустая ячейка справа от метки
+                  // (устойчиво к сдвигу столбцов: работает и для i+1, и для i+2)
+                  for (let j = i + 1; j < headerRow.length; j++) {
+                    const val = headerRow[j];
+                    if (val !== undefined && String(val).trim() !== '') {
+                      objectName = String(val).trim();
+                      break;
+                    }
+                  }
+                  break;
+                }
+              }
+            }
+
+            let headerIdx = -1;
+            let colMap = {};
+            for (let i = 0; i < raw.length; i++) {
+              const row = raw[i];
+              for (let j = 0; j < row.length; j++) {
+                const cell = String(row[j] || '').toLowerCase().trim();
+                if (cell === 'дата отчета') {
+                  headerIdx = i;
+                  const headers = raw[i];
+                  const findCol = (name) => {
+                    for (let k = 0; k < headers.length; k++) {
+                      if (String(headers[k] || '').toLowerCase().trim() === name) return k;
+                    }
+                    return -1;
+                  };
+                  colMap = {
+                    date: findCol('дата отчета'),
+                    work: findCol('вид работы'),
+                    contractor: findCol('подрядчик'),
+                    quality: findCol('оценка качества'),
+                    plan: findCol('план'),
+                    fact: findCol('факт'),
+                    reason: findCol('причина'),
+                    detail: findCol('детализация'),
+                    decision: findCol('решение'),
+                    critQuality: findCol('качество работ'),
+                    critDiscipline: findCol('дисциплина'),
+                    critPeople: findCol('кол-во людей'),
+                    critOutput: findCol('выработка'),
+                    critClean: findCol('чистота'),
+                  };
+                  break;
+                }
+              }
+              if (headerIdx !== -1) break;
+            }
+
+            if (headerIdx === -1) {
+              showToast('Не найден заголовок "дата отчета"', 'error');
+              return;
+            }
+            if (colMap.date === -1 || colMap.plan === -1 || colMap.fact === -1) {
+              showToast('Не найдены обязательные колонки: дата отчета, ПЛАН или ФАКТ', 'error');
+              return;
+            }
+
+            const rows = [];
+            for (let i = headerIdx + 1; i < raw.length; i++) {
+              const r = raw[i];
+              if (r.every(c => c === '' || c === undefined)) continue;
+              if (r[0] && String(r[0]).toLowerCase().trim() === 'итог') continue;
+
+              const planVal = parseFloat(r[colMap.plan]);
+              const factVal = parseFloat(r[colMap.fact]);
+              if (isNaN(planVal) && isNaN(factVal)) continue;
+
+              let qualityVal = null;
+              if (colMap.quality !== -1 && r[colMap.quality] !== '' && r[colMap.quality] !== undefined) {
+                qualityVal = parseFloat(r[colMap.quality]);
+                if (isNaN(qualityVal)) qualityVal = null;
+              }
+
+              const dateRaw = r[colMap.date];
+              const dateObj = parseExcelDate(dateRaw);
+              if (!dateObj) continue;
+
+              rows.push({
+                date: dateObj,
+                dateStr: formatDate(dateObj),
+                year: dateObj.getFullYear(),
+                month: dateObj.getMonth() + 1,
+                work: colMap.work !== -1 ? String(r[colMap.work] || '').trim() : '',
+                contractor: colMap.contractor !== -1 ? String(r[colMap.contractor] || '').trim() : '',
+                quality: qualityVal,
+                plan: isNaN(planVal) ? 0 : planVal,
+                fact: isNaN(factVal) ? 0 : factVal,
+                deviation: (isNaN(factVal) ? 0 : factVal) - (isNaN(planVal) ? 0 : planVal),
+                reason: colMap.reason !== -1 ? String(r[colMap.reason] || '').trim() : '',
+                detail: colMap.detail !== -1 ? String(r[colMap.detail] || '').trim() : '',
+                decision: colMap.decision !== -1 ? String(r[colMap.decision] || '').trim() : '',
+                crit: CRIT_FIELDS.map(f => (colMap[f.key] !== -1 && colMap[f.key] !== undefined
+                  ? String(r[colMap[f.key]] || '').trim() : '')),
+                objectName: objectName,
+              });
+            }
+
+            if (rows.length === 0) {
+              showToast('Данные не найдены', 'error');
+              return;
+            }
+
+            allRows = rows;
+            availableDates = [...new Set(rows.map(r => r.dateStr))].sort();
+            currentObjectName = objectName;
+
+            if (availableDates.length > 0) {
+              const lastDate = availableDates[availableDates.length - 1];
+              currentDate = lastDate;
+              FILTERS.date = lastDate;
+              updateDatePickerValue();
+            } else {
+              currentDate = null;
+              FILTERS.date = null;
+              updateDatePickerValue();
+            }
+
+            updateSubtitle(objectName);
+
+            applyFilters();
+            showToast(`Загружено ${rows.length} записей за ${availableDates.length} дней`, 'success');
+
+          } catch (err) {
+            showToast('Ошибка: ' + err.message, 'error');
+            console.error(err);
+          }
+        };
+        reader.readAsArrayBuffer(file);
+        input.value = '';
+      });
+    }
+    setupFileInput();
+
+    // ─── КРИТЕРИИ ОЦЕНКИ (модальное окно по клику на балл) ────────────────
+    let tableGroups = [];
+
+    function openCriteria(gi) {
+      const g = tableGroups[gi];
+      if (!g) return;
+      const body = document.getElementById('critBody');
+      const title = document.getElementById('critTitle');
+      title.innerHTML = `${g.contractor} <span class="accent">${g.work}</span>`;
+
+      const rows = g.rows.slice().sort((a, b) => (a.dateStr || '').localeCompare(b.dateStr || ''));
+      let html = '';
+      rows.forEach(r => {
+        const crit = r.crit || [];
+        const filled = crit.some(v => v);
+        const q = (r.quality !== null && !isNaN(r.quality)) ? r.quality.toFixed(1) : '—';
+        const dateLabel = r.dateStr ? formatDateDisplay(r.dateStr) : '';
+        html += `<div class="summary-section">
+          <div class="summary-section-title">${dateLabel} — оценка ${q}</div>`;
+        if (filled) {
+          CRIT_FIELDS.forEach((f, i) => {
+            html += `<div class="crit-row">
+              <span class="crit-name">${f.label}</span>
+              <span class="crit-val">${crit[i] || '<span class="crit-empty">не выбрано</span>'}</span>
+            </div>`;
+          });
+        } else {
+          html += `<div class="crit-row"><span class="crit-empty">Критерии не заполнены в этой строке отчёта.</span></div>`;
+        }
+        if (r.decision) {
+          html += `<div class="crit-row"><span class="crit-name">Решение РП</span>
+            <span class="crit-val"><span class="decision-badge ${decisionClass(r.decision)}">${r.decision}</span></span></div>`;
+        }
+        html += '</div>';
+      });
+      body.innerHTML = html || '<div class="summary-section"><div class="summary-section-title">Нет данных</div></div>';
+      document.getElementById('critOverlay').classList.add('show');
+    }
+
+    document.getElementById('critClose').addEventListener('click', () => {
+      document.getElementById('critOverlay').classList.remove('show');
+    });
+    document.getElementById('critOverlay').addEventListener('click', (e) => {
+      if (e.target === document.getElementById('critOverlay')) {
+        e.currentTarget.classList.remove('show');
+      }
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') document.getElementById('critOverlay').classList.remove('show');
+    });
+    tableBody.addEventListener('click', (e) => {
+      const badge = e.target.closest('.quality-badge.clickable');
+      if (badge) {
+        e.stopPropagation();
+        openCriteria(parseInt(badge.dataset.gi, 10));
+      }
+    });
+
+    function updateSubtitle(objectName) {
+      const subtitle = document.getElementById('subtitle');
+      const objName = objectName || '—';
+      const dateStr = FILTERS.date ? formatDateFull(FILTERS.date) : '—';
+      subtitle.textContent = `${objName} за ${dateStr} г.`;
+    }
+
+    // ─── КАСТОМНЫЙ КАЛЕНДАРЬ ─────────────────────────────────────────────
+    let pickerCurrentMonth = new Date().getMonth();
+    let pickerCurrentYear = new Date().getFullYear();
+
+    const pickerContainer = document.getElementById('customDatePicker');
+    const pickerInput = document.getElementById('filterDateInput');
+    const pickerPopup = document.getElementById('datePickerPopup');
+    const daysGrid = document.getElementById('daysGrid');
+    const monthYearSpan = document.getElementById('pickerMonthYear');
+
+    function renderCalendar(month, year) {
+      const firstDay = new Date(year, month, 1);
+      const lastDay = new Date(year, month + 1, 0);
+      const daysInMonth = lastDay.getDate();
+      const startDayOfWeek = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1;
+
+      monthYearSpan.textContent = new Date(year, month).toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' });
+
+      let html = '';
+      const today = new Date();
+      const todayStr = formatDate(today);
+      const selectedStr = FILTERS.date || '';
+
+      for (let i = 0; i < startDayOfWeek; i++) {
+        html += `<div class="day-cell other-month"></div>`;
+      }
+
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dateObj = new Date(year, month, d);
+        const dateStr = formatDate(dateObj);
+        let classes = 'day-cell';
+        if (dateStr === todayStr) classes += ' today';
+        if (dateStr === selectedStr) classes += ' selected';
+        html += `<div class="${classes}" data-date="${dateStr}">${d}</div>`;
+      }
+
+      daysGrid.innerHTML = html;
+    }
+
+    function openPicker() {
+      pickerPopup.classList.add('open');
+      pickerContainer.classList.add('focused');
+      const currentDate = FILTERS.date ? new Date(FILTERS.date) : new Date();
+      pickerCurrentMonth = currentDate.getMonth();
+      pickerCurrentYear = currentDate.getFullYear();
+      renderCalendar(pickerCurrentMonth, pickerCurrentYear);
+    }
+
+    function closePicker() {
+      pickerPopup.classList.remove('open');
+      pickerContainer.classList.remove('focused');
+    }
+
+    function updateDatePickerValue() {
+      if (FILTERS.date) {
+        pickerInput.value = formatDateDisplay(FILTERS.date);
+      } else {
+        pickerInput.value = '';
+      }
+      if (pickerPopup.classList.contains('open')) {
+        renderCalendar(pickerCurrentMonth, pickerCurrentYear);
+      }
+    }
+
+    pickerContainer.addEventListener('click', function(e) {
+      if (e.target.closest('.date-picker-popup')) return;
+      if (pickerPopup.classList.contains('open')) {
+        closePicker();
+      } else {
+        openPicker();
+      }
+    });
+
+    document.addEventListener('click', function(e) {
+      if (!pickerContainer.contains(e.target) && !e.target.closest('.date-picker-popup')) {
+        closePicker();
+      }
+    });
+
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        const dir = parseInt(this.dataset.dir);
+        pickerCurrentMonth += dir;
+        if (pickerCurrentMonth < 0) {
+          pickerCurrentMonth = 11;
+          pickerCurrentYear--;
+        } else if (pickerCurrentMonth > 11) {
+          pickerCurrentMonth = 0;
+          pickerCurrentYear++;
+        }
+        renderCalendar(pickerCurrentMonth, pickerCurrentYear);
+      });
+    });
+
+    daysGrid.addEventListener('click', function(e) {
+      const cell = e.target.closest('.day-cell');
+      if (!cell || cell.classList.contains('other-month')) return;
+      const dateStr = cell.dataset.date;
+      if (dateStr) {
+        FILTERS.date = dateStr;
+        updateDatePickerValue();
+        closePicker();
+        updateSubtitle(currentObjectName);
+        applyFilters();
+      }
+    });
+
+    // ─── FILTER LOGIC ────────────────────────────────────────────────────
+    function applyFilters() {
+      const f = FILTERS;
+      filteredRows = allRows.filter(r => {
+        if (f.contractors.length && !f.contractors.includes(r.contractor)) return false;
+        if (f.workTypes.length && !f.workTypes.includes(r.work)) return false;
+        if (f.reasons.length && !f.reasons.includes(r.reason)) return false;
+        if (f.decisions.length && !f.decisions.includes(r.decision)) return false;
+        if (f.date && r.dateStr !== f.date) return false;
+        return true;
+      });
+
+      renderDashboard(filteredRows);
+      updateFilterUI();
+      updateDatePickerValue();
+    }
+
+    // ─── RENDER DASHBOARD ──────────────────────────────────────────────────
+    function renderDashboard(rows) {
+      if (!rows || rows.length === 0) {
+        clearDashboard();
+        return;
+      }
+
+      const totalPlan = rows.reduce((s, r) => s + r.plan, 0);
+      const totalFact = rows.reduce((s, r) => s + r.fact, 0);
+      const percent = totalPlan > 0 ? (totalFact / totalPlan) * 100 : 0;
+
+      kpiPlan.textContent = totalPlan.toFixed(0);
+      kpiFact.textContent = totalFact.toFixed(0);
+      kpiPercent.textContent = percent.toFixed(1) + '%';
+
+      const card = kpiPercentCard;
+      card.className = 'kpi';
+      if (percent < 80) card.classList.add('roi-bad');
+      else if (percent < 95) card.classList.add('roi-mid');
+      else card.classList.add('roi-good');
+      card.classList.add('kpi');
+      card.dataset.metric = 'percent';
+
+      updateDonut(percent);
+
+      const qVals = rows.map(r => r.quality).filter(v => v !== null && !isNaN(v));
+      const avgQ = qVals.length > 0 ? qVals.reduce((a, b) => a + b, 0) / qVals.length : 0;
+      kpiQuality.textContent = avgQ.toFixed(1);
+
+      renderTable(rows);
+      renderTopNeg(rows);
+      renderTopQuality(rows);
+    }
+
+    function updateDonut(percent) {
+      const clamped = Math.min(100, Math.max(0, percent));
+
+      let color;
+      if (clamped >= 95) color = '#9DB984';
+      else if (clamped >= 80) color = '#EECB95';
+      else color = '#D88188';
+
+      const dashLength = (clamped / 100) * CIRCUMFERENCE;
+      const gapLength = CIRCUMFERENCE - dashLength;
+
+      donutSegment.setAttribute('stroke', color);
+      donutSegment.setAttribute('stroke-dasharray', `${dashLength} ${gapLength}`);
+    }
+
+    function clearDashboard() {
+      kpiPlan.textContent = '0';
+      kpiFact.textContent = '0';
+      kpiPercent.textContent = '0%';
+      kpiQuality.textContent = '0';
+      donutSegment.setAttribute('stroke-dasharray', `0 ${CIRCUMFERENCE}`);
+      tableBody.innerHTML =
+        '<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--ink-mute);">Нет данных за выбранную дату</td></tr>';
+      document.getElementById('negBars').innerHTML = '';
+      document.getElementById('qualBars').innerHTML = '';
+    }
+
+    // Значение для подстановки в HTML-атрибут
+    function attrVal(v) {
+      return String(v === null || v === undefined ? '' : v)
+        .replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    // ─── TABLE ──────────────────────────────────────────────────────────────
+    function renderTable(rows) {
+      const groups = new Map();
+      rows.forEach(r => {
+        // У собственных сил подрядчик не заполнен, поэтому по обычному ключу
+        // все такие строки схлопывались в одну. Группируем их по детализации
+        // и её же показываем в колонке «Подрядчик».
+        const own = isOwnForces(r);
+        const label = own
+          ? ((r.detail || '').trim() || 'Без детализации')
+          : (r.contractor || 'Без подрядчика');
+        const key = (own ? 'СС|' : '') + label + '|||' + (r.work || '—');
+        if (!groups.has(key)) {
+          groups.set(key, {
+            contractor: label,
+            isOwn: own,
+            work: r.work || '—',
+            qualityValues: [],
+            totalPlan: 0,
+            totalFact: 0,
+            totalDeviation: 0,
+            reasons: new Set(),
+            decisions: new Set(),
+            rows: []
+          });
+        }
+        const group = groups.get(key);
+        if (r.quality !== null && !isNaN(r.quality)) {
+          group.qualityValues.push(r.quality);
+        }
+        group.totalPlan += r.plan;
+        group.totalFact += r.fact;
+        group.totalDeviation += r.deviation;
+        if (r.reason && r.reason.trim() !== '') {
+          group.reasons.add(r.reason.trim());
+        }
+        if (r.decision && r.decision.trim() !== '') {
+          group.decisions.add(r.decision.trim());
+        }
+        group.rows.push(r);
+      });
+
+      let aggregated = Array.from(groups.values());
+
+      // --- СОРТИРОВКА ---
+      if (sortField) {
+        const sortFn = (a, b) => {
+          let valA, valB;
+          switch (sortField) {
+            case 'work':
+              valA = a.work;
+              valB = b.work;
+              break;
+            case 'contractor':
+              valA = a.contractor;
+              valB = b.contractor;
+              break;
+            case 'quality':
+              const avgA = a.qualityValues.length ? a.qualityValues.reduce((s, v) => s + v, 0) / a.qualityValues.length : null;
+              const avgB = b.qualityValues.length ? b.qualityValues.reduce((s, v) => s + v, 0) / b.qualityValues.length : null;
+              if (avgA === null && avgB === null) return 0;
+              if (avgA === null) return 1;
+              if (avgB === null) return -1;
+              valA = avgA;
+              valB = avgB;
+              break;
+            case 'plan':
+              valA = a.totalPlan;
+              valB = b.totalPlan;
+              break;
+            case 'deviation':
+              valA = a.totalDeviation;
+              valB = b.totalDeviation;
+              break;
+            case 'reasons':
+              const reasonsA = Array.from(a.reasons).sort().join(', ');
+              const reasonsB = Array.from(b.reasons).sort().join(', ');
+              valA = reasonsA;
+              valB = reasonsB;
+              break;
+            case 'decision':
+              valA = decisionRank(hardestDecision(a.decisions));
+              valB = decisionRank(hardestDecision(b.decisions));
+              break;
+            default:
+              return 0;
+          }
+          if (typeof valA === 'string' && typeof valB === 'string') {
+            return sortAsc ? valA.localeCompare(valB) : valB.localeCompare(valA);
+          } else {
+            if (valA === null && valB === null) return 0;
+            if (valA === null) return 1;
+            if (valB === null) return -1;
+            return sortAsc ? valA - valB : valB - valA;
+          }
+        };
+        aggregated.sort(sortFn);
+      } else {
+        aggregated.sort((a, b) => {
+          if (a.contractor !== b.contractor) return a.contractor.localeCompare(b.contractor);
+          return a.work.localeCompare(b.work);
+        });
+      }
+
+      // Собственные силы всегда идут первыми — при любой сортировке.
+      // filter сохраняет исходный порядок, поэтому сортировка внутри
+      // каждой из двух частей не нарушается.
+      const ownGroups = aggregated.filter(g => g.isOwn);
+      const contractorGroups = aggregated.filter(g => !g.isOwn);
+      aggregated = ownGroups.concat(contractorGroups);
+      const ownCount = ownGroups.length;
+      const needDivider = ownCount > 0 && contractorGroups.length > 0;
+
+      const maxPlan = aggregated.reduce((m, g) => Math.max(m, g.totalPlan), 1);
+      const maxDev = aggregated.reduce((m, g) => Math.max(m, Math.abs(g.totalDeviation)), 1);
+      const selectedContractors = FILTERS.contractors;
+
+      document.querySelectorAll('#detail-table thead th').forEach(th => {
+        const field = th.dataset.sort;
+        th.classList.remove('sorted');
+        const icon = th.querySelector('.sort-icon');
+        if (field === sortField) {
+          th.classList.add('sorted');
+          icon.textContent = sortAsc ? '▲' : '▼';
+        } else {
+          icon.textContent = '';
+        }
+      });
+
+      tableGroups = aggregated;
+
+      let html = '';
+      aggregated.forEach((g, gi) => {
+        const avgQuality = g.qualityValues.length > 0 ?
+          g.qualityValues.reduce((a, b) => a + b, 0) / g.qualityValues.length :
+          null;
+
+        const planPct = (g.totalPlan / maxPlan) * 100;
+        const dev = g.totalDeviation;
+        const devClass = dev > 0 ? 'pos' : (dev < 0 ? 'neg' : 'zero');
+        const devLabel = (dev > 0 ? '+' : '') + dev.toFixed(0);
+        const isSel = selectedContractors.includes(g.contractor);
+
+        let qualityHtml = '—';
+        const grade = qualityGrade(avgQuality);
+        if (grade) {
+          const hasCrit = g.rows.some(r => (r.crit || []).some(v => v));
+          const cls = 'quality-badge ' + grade.cls + (hasCrit ? ' clickable' : '');
+          const tip = hasCrit ? grade.level + ' · нажмите, чтобы увидеть критерии' : grade.level;
+          qualityHtml = `<span class="${cls}" data-gi="${gi}" title="${tip}">${avgQuality.toFixed(1)}</span>`;
+        }
+
+        // Решение РП — из столбца «РЕШЕНИЕ» плоской таблицы
+        const decList = Array.from(g.decisions);
+        const decMain = hardestDecision(g.decisions);
+        let decisionHtml = '—';
+        if (decMain) {
+          const tip = decList.join(', ').replace(/"/g, '&quot;');
+          const decAct = FILTERS.decisions.includes(decMain) ? ' filter-active' : '';
+          decisionHtml = `<span class="decision-badge ${decisionClass(decMain)}${decAct}" ` +
+            `data-filter="decisions" data-value="${attrVal(decMain)}" ` +
+            `title="${tip} · нажмите для фильтра">${decMain}</span>`;
+        }
+
+        // Причины — каждая отдельным кликабельным значением
+        const reasonsList = Array.from(g.reasons);
+        const reasonsHtml = reasonsList.length > 0
+          ? reasonsList.map(rs => {
+              const act = FILTERS.reasons.includes(rs) ? ' filter-active' : '';
+              return `<span class="reason-tag${act}" data-filter="reasons" data-value="${attrVal(rs)}">${rs}</span>`;
+            }).join(', ')
+          : '';
+
+        let barHtml = '';
+        if (dev === 0) {
+          barHtml = `<div class="deviation-bar"><div class="dev-zero"></div></div>`;
+        } else {
+          const absDev = Math.abs(dev);
+          const devPct = Math.min((absDev / maxDev) * 100, 100);
+          const barClass = dev > 0 ? 'dev-pos' : 'dev-neg';
+          const style = dev > 0 ? `left:50%; width:${devPct}%;` : `right:50%; width:${devPct}%;`;
+          barHtml = `<div class="deviation-bar">
+            <div class="${barClass}" style="${style}"></div>
+            <div class="dev-zero"></div>
+          </div>`;
+        }
+
+        const rowClass = [
+          isSel ? 'is-selected' : '',
+          needDivider && gi === ownCount - 1 ? 'own-divider' : ''
+        ].filter(Boolean).join(' ');
+        const workAct = FILTERS.workTypes.includes(g.work) ? ' filter-active' : '';
+        const contrAct = isSel ? ' filter-active' : '';
+        // Для собственных сил в колонке стоит детализация, а не подрядчик,
+        // поэтому фильтр по подрядчику к ней не применяется
+        const contrCell = g.isOwn
+          ? `<td class="own-cell" title="Собственные силы — детализация">${g.contractor}</td>`
+          : `<td class="cell-filter${contrAct}" data-filter="contractors" data-value="${attrVal(g.contractor)}" title="Фильтр по подрядчику">${g.contractor}</td>`;
+
+        html += `<tr class="${rowClass}" data-contractor="${g.isOwn ? '' : attrVal(g.contractor)}">
+          <td class="cell-filter${workAct}" data-filter="workTypes" data-value="${attrVal(g.work)}" title="Фильтр по виду работы">${g.work}</td>
+          ${contrCell}
+          <td>${qualityHtml}</td>
+          <td>${decisionHtml}</td>
+          <td class="bar-cell">
+            <div class="bar-container">
+              <span class="bar-value">${g.totalPlan.toFixed(0)}</span>
+              <div class="bar-bg"><div class="bar-fill" style="width:${Math.min(planPct, 100)}%;"></div></div>
+            </div>
+          </td>
+          <td class="bar-cell">
+            <div class="deviation-container">
+              <span class="deviation-value ${devClass}">${devLabel}</span>
+              ${barHtml}
+            </div>
+          </td>
+          <td>${reasonsHtml}</td>
+        </tr>`;
+      });
+
+      tableBody.innerHTML = html;
+    }
+
+    // ─── ОБРАБОТЧИК СОРТИРОВКИ ────────────────────────────────────────────
+    document.querySelector('#detail-table thead').addEventListener('click', function(e) {
+      const th = e.target.closest('th');
+      if (!th) return;
+      const field = th.dataset.sort;
+      if (!field) return;
+
+      if (sortField === field) {
+        sortAsc = !sortAsc;
+      } else {
+        sortField = field;
+        sortAsc = true;
+      }
+      if (filteredRows.length) {
+        renderTable(filteredRows);
+      } else {
+        renderTable(allRows);
+      }
+    });
+
+    // ─── CHARTS: TOP 10 CONTRACTORS BY DEVIATION ──────────────────────────
+    let NEG_ANTI = true;
+
+    // Причины, за которые отвечает сам подрядчик.
+    // Недобор по «нет готовности», «нет материалов», «нет оплаты» —
+    // это не вина подрядчика, в антирейтинг такие строки не попадают.
+    // Сравнение по вхождению подстроки в нижнем регистре, поэтому
+    // достаточно указать характерный фрагмент формулировки.
+    // Старая формулировка оставлена, чтобы работали архивные записи.
+    const FAULT_REASONS = [
+      'фронт и материалы есть, нет людей',
+      'нет людей',
+      'подводит подрядчик',
+    ];
+
+    function isContractorFault(reason) {
+      const t = String(reason || '').trim().toLowerCase();
+      if (!t) return false;
+      return FAULT_REASONS.some(f => t.indexOf(f) !== -1);
+    }
+
+    // Собственные силы: подрядчика в таких строках нет, работу ведёт свой персонал
+    const OWN_FORCES = 'собственные силы';
+
+    function isOwnForces(r) {
+      return String(r.work || '').trim().toLowerCase() === OWN_FORCES;
+    }
+
+    // Строка относится к подрядчику (подрядчик указан и это не «Собственные силы»)
+    function isContractorRow(r) {
+      const c = (r.contractor || '').trim();
+      if (!c) return false;
+      if (isOwnForces(r)) return false;
+      return true;
+    }
+
+    function renderTopNeg(rows) {
+      const map = new Map();
+      rows.forEach(r => {
+        if (!isContractorRow(r)) return;   // исключаем собственные силы
+
+        // В режиме антирейтинга учитываем только недобор по вине подрядчика.
+        // Простои из-за отсутствия фронта, материалов или оплаты не его зона
+        // ответственности и в антирейтинг не идут.
+        if (NEG_ANTI) {
+          if (r.deviation >= 0) return;
+          if (!isContractorFault(r.reason)) return;
+        }
+
+        const key = r.contractor;
+        map.set(key, (map.get(key) || 0) + r.deviation);
+      });
+
+      let arr = Array.from(map.entries()).map(([name, dev]) => ({ name, dev }));
+
+      if (NEG_ANTI) {
+        arr = arr.filter(item => item.dev < 0);
+        arr.sort((a, b) => a.dev - b.dev);
+      } else {
+        arr = arr.filter(item => item.dev >= 0);
+        arr.sort((a, b) => b.dev - a.dev);
+      }
+
+      const slider = document.getElementById('topNegSlider');
+      const badge = document.getElementById('negCountBadge');
+      const n = parseInt(slider.value);
+
+      const container = document.getElementById('negBars');
+      if (!container) return;
+
+      if (arr.length === 0) {
+        container.className = 'hbar-list empty';
+        container.innerHTML = `<div class="empty-message">Нет данных для отображения</div>`;
+        const titleEl = document.getElementById('topNegTitle');
+        titleEl.textContent = NEG_ANTI ? 'АНТИРЕЙТИНГ 0' : 'ТОП-0';
+        const subEl0 = document.getElementById('topNegSub');
+        if (subEl0) {
+          subEl0.textContent = NEG_ANTI
+            ? 'недобор по вине подрядчика (фронт и материалы есть, нет людей)'
+            : 'отклонение (факт − план)';
+        }
+        badge.textContent = NEG_ANTI ? 'АНТИРЕЙТИНГ 0' : 'ТОП 0';
+        badge.classList.toggle('anti-mode', NEG_ANTI);
+        if (!NEG_ANTI) {
+          badge.classList.add('active');
+        } else {
+          badge.classList.remove('active');
+        }
+        updateTopControlsStyle('neg', NEG_ANTI);
+        return;
+      }
+
+      container.className = 'hbar-list';
+
+      const items = arr.slice(0, n);
+      const maxAbs = Math.max(...items.map(i => Math.abs(i.dev)), 1);
+
+      const titleEl = document.getElementById('topNegTitle');
+      titleEl.textContent = NEG_ANTI ? 'АНТИРЕЙТИНГ ' + items.length : 'ТОП-' + items.length;
+
+      const subEl = document.getElementById('topNegSub');
+      if (subEl) {
+        subEl.textContent = NEG_ANTI
+          ? 'недобор по вине подрядчика (фронт и материалы есть, нет людей)'
+          : 'отклонение (факт − план)';
+      }
+
+      badge.textContent = NEG_ANTI ? 'АНТИРЕЙТИНГ ' + items.length : 'ТОП ' + items.length;
+      badge.classList.toggle('anti-mode', NEG_ANTI);
+      if (!NEG_ANTI) {
+        badge.classList.add('active');
+      } else {
+        badge.classList.remove('active');
+      }
+
+      updateTopControlsStyle('neg', NEG_ANTI);
+
+      const selected = FILTERS.contractors;
+
+      container.innerHTML = items.map(item => {
+        const val = item.dev;
+        const pct = Math.abs(val) / maxAbs * 100;
+        const isSel = selected.includes(item.name);
+        const label = (val > 0 ? '+' : '') + val.toFixed(0);
+
+        let fillClass = 'deviation-pos';
+        if (val < 0) fillClass = 'deviation-neg';
+
+        return `<div class="hbar-row${isSel ? ' is-selected' : ''}" data-contractor="${item.name}">
+          <div class="hbar-name" title="${item.name}">${item.name}</div>
+          <div class="hbar-track">
+            <div class="hbar-fill ${fillClass}" style="width:${Math.max(5, pct)}%">
+              <span class="hbar-val">${label}</span>
+            </div>
+          </div>
+        </div>`;
+      }).join('');
+
+      const unitEl = document.getElementById('unitTopNeg');
+      if (unitEl) unitEl.textContent = 'чел.';
+    }
+
+    // ─── CHARTS: TOP 10 CONTRACTORS BY QUALITY ────────────────────────────
+    let QUAL_ANTI = true;
+
+    function renderTopQuality(rows) {
+      const map = new Map();
+      rows.forEach(r => {
+        if (r.quality === null || isNaN(r.quality)) return;
+        if (!isContractorRow(r)) return;   // исключаем собственные силы
+        const key = r.contractor;
+        if (!map.has(key)) map.set(key, []);
+        map.get(key).push(r.quality);
+      });
+
+      let arr = [];
+      for (let [name, vals] of map.entries()) {
+        arr.push({ name, avg: vals.reduce((a, b) => a + b, 0) / vals.length });
+      }
+
+      if (QUAL_ANTI) {
+        arr = arr.filter(item => item.avg < 4);
+        arr.sort((a, b) => a.avg - b.avg);
+      } else {
+        arr = arr.filter(item => item.avg >= 4);
+        arr.sort((a, b) => b.avg - a.avg);
+      }
+
+      const slider = document.getElementById('topQualSlider');
+      const badge = document.getElementById('qualCountBadge');
+      const n = parseInt(slider.value);
+
+      const container = document.getElementById('qualBars');
+      if (!container) return;
+
+      if (arr.length === 0) {
+        container.className = 'hbar-list empty';
+        container.innerHTML = `<div class="empty-message">Нет данных для отображения</div>`;
+        const titleEl = document.getElementById('topQualTitle');
+        titleEl.textContent = QUAL_ANTI ? 'АНТИРЕЙТИНГ 0' : 'ТОП-0';
+        badge.textContent = QUAL_ANTI ? 'АНТИРЕЙТИНГ 0' : 'ТОП 0';
+        badge.classList.toggle('anti-mode', QUAL_ANTI);
+        if (!QUAL_ANTI) {
+          badge.classList.add('active');
+        } else {
+          badge.classList.remove('active');
+        }
+        updateTopControlsStyle('qual', QUAL_ANTI);
+        return;
+      }
+
+      container.className = 'hbar-list';
+
+      const items = arr.slice(0, n);
+      const maxVal = Math.max(...items.map(i => i.avg), 1);
+
+      const titleEl = document.getElementById('topQualTitle');
+      titleEl.textContent = QUAL_ANTI ? 'АНТИРЕЙТИНГ ' + items.length : 'ТОП-' + items.length;
+
+      badge.textContent = QUAL_ANTI ? 'АНТИРЕЙТИНГ ' + items.length : 'ТОП ' + items.length;
+      badge.classList.toggle('anti-mode', QUAL_ANTI);
+      if (!QUAL_ANTI) {
+        badge.classList.add('active');
+      } else {
+        badge.classList.remove('active');
+      }
+
+      updateTopControlsStyle('qual', QUAL_ANTI);
+
+      const selected = FILTERS.contractors;
+
+      container.innerHTML = items.map(item => {
+        const val = item.avg;
+        const pct = (val / maxVal) * 100;
+        const isSel = selected.includes(item.name);
+
+        let fillClass = 'quality-low';
+        if (val >= 4) fillClass = 'quality-high';
+
+        const label = val.toFixed(1);
+        return `<div class="hbar-row${isSel ? ' is-selected' : ''}" data-contractor="${item.name}">
+          <div class="hbar-name" title="${item.name}">${item.name}</div>
+          <div class="hbar-track">
+            <div class="hbar-fill ${fillClass}" style="width:${Math.max(5, pct)}%">
+              <span class="hbar-val">${label}</span>
+            </div>
+          </div>
+        </div>`;
+      }).join('');
+
+      const unitEl = document.getElementById('unitTopQual');
+      if (unitEl) unitEl.textContent = 'балл';
+    }
+
+    // ─── ОБНОВЛЕНИЕ СТИЛЕЙ ЭЛЕМЕНТОВ УПРАВЛЕНИЯ ──────────────────────────
+    function updateTopControlsStyle(prefix, isAnti) {
+      const label = document.getElementById(prefix + 'TopLabel');
+      const slider = document.getElementById('top' + (prefix === 'neg' ? 'Neg' : 'Qual') + 'Slider');
+      const sep = document.getElementById(prefix + 'Sep');
+
+      if (isAnti) {
+        label.classList.remove('active');
+        slider.classList.remove('active');
+        sep.classList.remove('active');
+      } else {
+        label.classList.add('active');
+        slider.classList.add('active');
+        sep.classList.add('active');
+      }
+    }
+
+    // ─── FILTER UI ──────────────────────────────────────────────────────────
+    function updateFilterUI() {
+      const f = FILTERS;
+      const count = f.contractors.length + f.workTypes.length + f.reasons.length +
+        f.decisions.length + (f.date ? 1 : 0);
+      document.getElementById('filterBadge').textContent = count;
+      document.getElementById('filterBadge').classList.toggle('show', count > 0);
+      document.getElementById('filterFootInfo').textContent = 'Активных фильтров: ' + count;
+      document.getElementById('btnReset').classList.toggle('dirty', count > 0);
+
+      renderFilterChips();
+      if (pickerPopup.classList.contains('open')) {
+        renderCalendar(pickerCurrentMonth, pickerCurrentYear);
+      }
+    }
+
+    function renderFilterChips() {
+      const contractors = [...new Set(allRows.map(r => r.contractor))].filter(Boolean).sort();
+      renderChipGroup('filterContractors', contractors, FILTERS.contractors, 'contractors');
+
+      const workTypes = [...new Set(allRows.map(r => r.work))].filter(Boolean).sort();
+      renderChipGroup('filterWorkTypes', workTypes, FILTERS.workTypes, 'workTypes');
+
+      const reasons = [...new Set(allRows.map(r => r.reason))].filter(Boolean).sort();
+      renderChipGroup('filterReasons', reasons, FILTERS.reasons, 'reasons');
+
+      const decs = [...new Set(allRows.map(r => r.decision))].filter(Boolean)
+        .sort((a, b) => decisionRank(b) - decisionRank(a));
+      renderChipGroup('filterDecisions', decs, FILTERS.decisions, 'decisions');
+    }
+
+    function renderChipGroup(containerId, values, selected, filterKey, labelFn) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+      container.innerHTML = values.map(v => {
+        const isSel = selected.includes(v);
+        const label = labelFn ? labelFn(v) : v;
+        // у решений перед названием ставим точку того же цвета, что и плашка
+        const extra = filterKey === 'decisions'
+          ? ' chip-decision ' + decisionMeta(v).dot
+          : '';
+        return `<button type="button" class="chip${isSel ? ' selected' : ''}${extra}" data-filter-key="${filterKey}" data-val="${String(v).replace(/"/g, '&quot;')}">${label}</button>`;
+      }).join('');
+    }
+
+    // ─── FILTER EVENTS ──────────────────────────────────────────────────────
+    document.getElementById('filterBody').addEventListener('click', function(e) {
+      const chip = e.target.closest('.chip');
+      if (!chip) return;
+      const key = chip.dataset.filterKey;
+      const val = chip.dataset.val;
+      if (!key || val === undefined) return;
+
+      const arr = FILTERS[key];
+      const idx = arr.indexOf(val);
+      if (idx >= 0) arr.splice(idx, 1);
+      else arr.push(val);
+
+      applyFilters();
+    });
+
+    document.getElementById('filterClearBtn').addEventListener('click', function() {
+      FILTERS.date = null;
+      FILTERS.contractors = [];
+      FILTERS.workTypes = [];
+      FILTERS.reasons = [];
+      FILTERS.decisions = [];
+      if (allRows.length) {
+        const last = allRows.reduce((a, b) => a.date > b.date ? a : b);
+        FILTERS.date = formatDate(last.date);
+      }
+      updateDatePickerValue();
+      updateSubtitle(currentObjectName);
+      applyFilters();
+      showToast('Фильтры сброшены', 'success');
+    });
+
+    document.getElementById('btnFilters').addEventListener('click', function() {
+      document.getElementById('filterOverlay').classList.add('show');
+      if (pickerPopup.classList.contains('open')) {
+        renderCalendar(pickerCurrentMonth, pickerCurrentYear);
+      }
+    });
+
+    document.getElementById('filterClose').addEventListener('click', function() {
+      document.getElementById('filterOverlay').classList.remove('show');
+    });
+
+    document.getElementById('filterOverlay').addEventListener('click', function(e) {
+      if (e.target === this) this.classList.remove('show');
+    });
+
+    document.getElementById('btnReset').addEventListener('click', function() {
+      document.getElementById('filterClearBtn').click();
+    });
+
+    // ─── CROSS-FILTER ────────────────────────────────────────────────────
+    // Приоритет: конкретное значение (вид работы, подрядчик, решение,
+    // причина) → столбик в графике → строка таблицы целиком.
+    document.addEventListener('click', function(e) {
+      const el = e.target.closest('[data-filter][data-value]');
+      if (el) {
+        const key = el.dataset.filter;
+        const val = el.dataset.value;
+        if (Array.isArray(FILTERS[key]) && val) {
+          toggleFilter(key, val);
+          return;
+        }
+      }
+
+      const bar = e.target.closest('.hbar-row[data-contractor]');
+      if (bar && bar.dataset.contractor) {
+        toggleFilter('contractors', bar.dataset.contractor);
+        return;
+      }
+
+      const tr = e.target.closest('#detail-table tbody tr');
+      if (tr && tr.dataset.contractor) {
+        toggleFilter('contractors', tr.dataset.contractor);
+        return;
+      }
+    });
+
+    function toggleFilter(key, val) {
+      const arr = FILTERS[key];
+      if (!arr) return;
+      const idx = arr.indexOf(val);
+      if (idx >= 0) arr.splice(idx, 1);
+      else arr.push(val);
+      applyFilters();
+    }
+
+    // ─── TOP SLIDERS ────────────────────────────────────────────────────
+    document.getElementById('topNegSlider').addEventListener('input', function() {
+      renderTopNeg(filteredRows);
+    });
+    document.getElementById('topQualSlider').addEventListener('input', function() {
+      renderTopQuality(filteredRows);
+    });
+
+    // ─── АНТИРЕЙТИНГ ──────────────────────────────────────────────────────
+    document.getElementById('negAnti').addEventListener('change', function() {
+      NEG_ANTI = this.checked;
+      renderTopNeg(filteredRows);
+    });
+
+    document.getElementById('qualAnti').addEventListener('change', function() {
+      QUAL_ANTI = this.checked;
+      renderTopQuality(filteredRows);
+    });
+
+    // ─── THEME ──────────────────────────────────────────────────────────────
+    document.getElementById('themeToggle').addEventListener('click', function() {
+      const html = document.documentElement;
+      const cur = html.dataset.theme || 'light';
+      html.dataset.theme = cur === 'light' ? 'dark' : 'light';
+      if (filteredRows.length > 0) {
+        renderTopNeg(filteredRows);
+        renderTopQuality(filteredRows);
+      }
+    });
+
+    // ─── CANVAS SCALE ──────────────────────────────────────────────────────
+    function scaleCanvas() {
+      const s = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+      document.getElementById('canvas').style.setProperty('--canvas-scale', s);
+    }
+    scaleCanvas();
+    window.addEventListener('resize', scaleCanvas);
+
+    // ─── EXECUTIVE SUMMARY ────────────────────────────────────────────────
+    // Строка списка: «ИП Попов — недобор 5 чел. 12.08 (болезнь), оценка 3,5»
+    function decisionItem(name, avg, rows, decision) {
+      const parts = [];
+      const shortfall = rows.reduce((s, r) => s + Math.min(0, r.deviation), 0);
+      const dates = [...new Set(rows.filter(r => r.deviation < 0).map(r => r.dateStr))].filter(Boolean).sort();
+      const reasons = [...new Set(rows.map(r => r.reason).filter(Boolean))];
+
+      if (shortfall < 0) {
+        let t = `недобор ${Math.abs(shortfall).toFixed(0)} чел.`;
+        if (dates.length) {
+          const shown = dates.slice(0, 3).map(formatDateDisplay).join(', ');
+          t += ` (${shown}${dates.length > 3 ? ` и ещё ${dates.length - 3}` : ''})`;
+        }
+        parts.push(t);
+      }
+      if (reasons.length) parts.push(`причина: ${reasons.join('; ')}`);
+      if (avg !== null) parts.push(`оценка ${avg.toFixed(1)}`);
+      if (!parts.length) parts.push('решение зафиксировано руководителем проекта');
+
+      return `<strong>${name}</strong> — <span class="sub-meta">${parts.join(', ')}</span>`;
+    }
+
+    function buildSummary() {
+      const rows = filteredRows.length ? filteredRows : allRows;
+      if (!rows.length) return null;
+
+      const totalPlan = rows.reduce((s, r) => s + r.plan, 0);
+      const totalFact = rows.reduce((s, r) => s + r.fact, 0);
+      const percent = totalPlan > 0 ? (totalFact / totalPlan) * 100 : 0;
+      const qVals = rows.map(r => r.quality).filter(v => v !== null && !isNaN(v));
+      const avgQ = qVals.length > 0 ? qVals.reduce((a, b) => a + b, 0) / qVals.length : 0;
+
+      const contractorMap = new Map();
+      rows.forEach(r => {
+        if (!isContractorRow(r)) return;   // исключаем собственные силы
+        const key = r.contractor;
+        if (!contractorMap.has(key)) contractorMap.set(key, { plan: 0, fact: 0, q: [], dec: new Set(), rows: [] });
+        const c = contractorMap.get(key);
+        c.plan += r.plan;
+        c.fact += r.fact;
+        if (r.quality !== null && !isNaN(r.quality)) c.q.push(r.quality);
+        if (r.decision) c.dec.add(r.decision);
+        c.rows.push(r);
+      });
+
+      let bestQuality = null;
+      let bestQualityNames = [];
+      for (let [name, c] of contractorMap.entries()) {
+        const avg = c.q.length ? c.q.reduce((a, b) => a + b, 0) / c.q.length : null;
+        if (avg !== null) {
+          if (bestQuality === null || avg > bestQuality) {
+            bestQuality = avg;
+            bestQualityNames = [name];
+          } else if (avg === bestQuality) {
+            bestQualityNames.push(name);
+          }
+        }
+      }
+
+      let worstDeviation = null;
+      let worstDeviationNames = [];
+      for (let [name, c] of contractorMap.entries()) {
+        const dev = c.fact - c.plan;
+        if (worstDeviation === null || dev < worstDeviation) {
+          worstDeviation = dev;
+          worstDeviationNames = [name];
+        } else if (dev === worstDeviation) {
+          worstDeviationNames.push(name);
+        }
+      }
+
+      let bestDeviation = null;
+      let bestDeviationNames = [];
+      for (let [name, c] of contractorMap.entries()) {
+        const dev = c.fact - c.plan;
+        if (bestDeviation === null || dev > bestDeviation) {
+          bestDeviation = dev;
+          bestDeviationNames = [name];
+        } else if (dev === bestDeviation) {
+          bestDeviationNames.push(name);
+        }
+      }
+
+      const lines = [];
+      lines.push({ tone: percent >= 95 ? 'pos' : (percent >= 80 ? 'neu' : 'neg'),
+        html: `Общее выполнение плана: <strong>${percent.toFixed(1)}%</strong> (факт ${totalFact.toFixed(0)} / план ${totalPlan.toFixed(0)}).` });
+
+      if (qVals.length > 0) {
+        const g = qualityGrade(avgQ);
+        lines.push({ tone: g.tone,
+          html: `Средняя оценка качества: <strong>${avgQ.toFixed(1)}</strong> из 5 — ${g.level.toLowerCase()}.` });
+      }
+
+      if (bestQualityNames.length > 0 && bestQuality !== null) {
+        const names = bestQualityNames.join(', ');
+        lines.push({ tone: 'pos',
+          html: `${bestQualityNames.length > 1 ? 'Лучшие' : 'Лучший'} подрядчик${bestQualityNames.length > 1 ? 'и' : ''} по качеству: <strong>${names}</strong> (${bestQuality.toFixed(1)} балла).` });
+      }
+
+      if (worstDeviationNames.length > 0 && worstDeviation !== null && worstDeviation < 0) {
+        const names = worstDeviationNames.join(', ');
+        lines.push({ tone: 'neg',
+          html: `Наибольшее отрицательное отклонение у подрядчик${worstDeviationNames.length > 1 ? 'ов' : 'а'}: <strong>${names}</strong> (${worstDeviation.toFixed(0)} чел.).` });
+      } else if (bestDeviationNames.length > 0 && bestDeviation !== null && bestDeviation > 0) {
+        const names = bestDeviationNames.join(', ');
+        lines.push({ tone: 'pos',
+          html: `Наибольшее положительное отклонение у подрядчик${bestDeviationNames.length > 1 ? 'ов' : 'а'}: <strong>${names}</strong> (${bestDeviation.toFixed(0)} чел.).` });
+      }
+
+      // ── решения руководителя проекта ──
+      // Группируем по фактическому тексту решения: вариантов в справочнике
+      // шесть, и каждый выводится отдельным списком со своим цветом.
+      const byDecision = new Map();
+      const noDecision = [];
+      for (let [name, c] of contractorMap.entries()) {
+        const avg = c.q.length ? c.q.reduce((a, b) => a + b, 0) / c.q.length : null;
+        const dec = hardestDecision(c.dec);
+        const rank = decisionRank(dec);
+        if (rank === 0) {
+          if (avg !== null && avg < 3.5) noDecision.push(decisionItem(name, avg, c.rows, null));
+          continue;
+        }
+        const item = decisionItem(name, avg, c.rows.filter(r => decisionRank(r.decision) === rank), dec);
+        if (!byDecision.has(dec)) byDecision.set(dec, []);
+        byDecision.get(dec).push(item);
+      }
+
+      // Заголовок каждого списка — такая же цветная плашка, как в таблице:
+      // замена красная, претензия жёлтая, «решение не указано» серая
+      const asList = (title, items, tone, cls) => {
+        const li = items.map((i, n) => `<li><span class="sub-num">${n + 1}.</span> ${i}</li>`).join('');
+        const head = `<span class="decision-badge ${cls}">${title}</span>`;
+        lines.push({ tone: tone, html: `${head}<ul class="summary-sublist">${li}</ul>` });
+      };
+
+      // от самого жёсткого решения к мягкому
+      const ordered = Array.from(byDecision.entries())
+        .sort((a, b) => decisionRank(b[0]) - decisionRank(a[0]));
+
+      ordered.forEach(([dec, items]) => {
+        const meta = decisionMeta(dec);
+        asList(dec, items, meta.rank >= 4 ? 'neg' : 'neu', meta.cls);
+      });
+
+      if (ordered.length === 0) {
+        lines.push({ tone: 'pos', html: `Решения по подрядчикам не зафиксированы.` });
+      }
+      if (noDecision.length > 0) {
+        asList('Решение не указано, оценка ниже 3,5', noDecision, 'neu', 'd-none');
+      }
+
+      if (contractorMap.size > 0) {
+        lines.push({ tone: 'neu',
+          html: `Всего подрядчиков: <strong>${contractorMap.size}</strong>.` });
+      }
+
+      return lines;
+    }
+
+    function renderSummary() {
+      const body = document.getElementById('summaryBody');
+      const info = document.getElementById('summaryFootInfo');
+      const lines = buildSummary();
+      if (!lines) {
+        body.innerHTML = '<div class="summary-section"><div class="summary-section-title">Нет данных</div></div>';
+        info.textContent = 'Загрузите данные для формирования отчёта.';
+        return;
+      }
+      body.innerHTML = lines.map(line =>
+        `<div class="summary-section"><div class="summary-line ${line.tone}">${line.html}</div></div>`
+      ).join('');
+      const now = new Date();
+      const dStr = now.toLocaleDateString('ru-RU', { day: '2-digit', month: 'long', year: 'numeric' });
+      info.textContent = `Сформировано ${dStr}`;
+    }
+
+    document.getElementById('btnSummary').addEventListener('click', function() {
+      renderSummary();
+      document.getElementById('summaryOverlay').classList.add('show');
+    });
+
+    document.getElementById('summaryClose').addEventListener('click', function() {
+      document.getElementById('summaryOverlay').classList.remove('show');
+    });
+
+    document.getElementById('summaryOverlay').addEventListener('click', function(e) {
+      if (e.target === this) this.classList.remove('show');
+    });
+
+    // ─── EXPORT SUMMARY TO PNG ──────────────────────────────────────────
+    async function exportSummaryPng() {
+      const modal = document.querySelector('.summary-modal');
+      if (!modal) return;
+      try {
+        showToast('Подготовка PNG...', 'success');
+        const canvas = await html2canvas(modal, {
+          backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--surface').trim() || '#ffffff',
+          scale: 2,
+          useCORS: true,
+          logging: false,
+        });
+        const link = document.createElement('a');
+        link.download = `Краткое_резюме.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        showToast('PNG скачан', 'success');
+      } catch (err) {
+        showToast('Ошибка: ' + err.message, 'error');
+      }
+    }
+
+    document.getElementById('summaryPngBtn').addEventListener('click', exportSummaryPng);
+
+    // ─── DASHBOARD SCREENSHOT (PNG) ──────────────────────────────────────
+    async function captureDashboardPng() {
+      const canvasEl = document.getElementById('canvas');
+      if (!canvasEl) return;
+      try {
+        showToast('Подготовка скриншота дашборда (PNG)...', 'success');
+
+        const origStyles = {
+          canvas: {
+            height: canvasEl.style.height,
+            overflow: canvasEl.style.overflow,
+            transform: canvasEl.style.transform,
+          },
+          panelsGrid: null,
+          panels: [],
+          panelBodies: [],
+          tableWraps: [],
+        };
+
+        const panelsGrid = document.querySelector('.panels-grid');
+        if (panelsGrid) {
+          origStyles.panelsGrid = {
+            flex: panelsGrid.style.flex,
+            minHeight: panelsGrid.style.minHeight,
+            display: panelsGrid.style.display,
+          };
+          panelsGrid.style.flex = 'none';
+          panelsGrid.style.minHeight = 'auto';
+        }
+
+        const panels = document.querySelectorAll('.panel');
+        panels.forEach(p => {
+          origStyles.panels.push({
+            flex: p.style.flex,
+            minHeight: p.style.minHeight,
+            overflow: p.style.overflow,
+          });
+          p.style.flex = 'none';
+          p.style.minHeight = 'auto';
+          p.style.overflow = 'visible';
+        });
+
+        const panelBodies = document.querySelectorAll('.panel-body');
+        panelBodies.forEach(pb => {
+          origStyles.panelBodies.push({
+            flex: pb.style.flex,
+            minHeight: pb.style.minHeight,
+            overflow: pb.style.overflow,
+            padding: pb.style.padding,
+          });
+          pb.style.flex = 'none';
+          pb.style.minHeight = 'auto';
+          pb.style.overflow = 'visible';
+        });
+
+        const tableWraps = document.querySelectorAll('.table-wrap');
+        tableWraps.forEach(tw => {
+          origStyles.tableWraps.push({
+            overflow: tw.style.overflow,
+            height: tw.style.height,
+            flex: tw.style.flex,
+            minHeight: tw.style.minHeight,
+          });
+          tw.style.overflow = 'visible';
+          tw.style.height = 'auto';
+          tw.style.flex = 'none';
+          tw.style.minHeight = 'auto';
+        });
+
+        canvasEl.style.height = 'auto';
+        canvasEl.style.overflow = 'visible';
+        canvasEl.style.transform = 'none';
+
+        const html = document.documentElement;
+        const prevTheme = html.dataset.theme || 'light';
+        html.dataset.theme = 'light';
+        if (filteredRows.length > 0) {
+          renderTopNeg(filteredRows);
+          renderTopQuality(filteredRows);
+        }
+
+        await new Promise(r => requestAnimationFrame(r));
+        await new Promise(r => setTimeout(r, 100));
+
+        const scrollHeight = canvasEl.scrollHeight;
+        const width = 1920;
+        const height = Math.max(scrollHeight, 1080);
+
+        const snap = await html2canvas(canvasEl, {
+          backgroundColor: '#ffffff',
+          scale: 1.5,
+          useCORS: true,
+          logging: false,
+          width: width,
+          height: height,
+          windowHeight: height,
+          windowWidth: width,
+        });
+
+        canvasEl.style.height = origStyles.canvas.height || '';
+        canvasEl.style.overflow = origStyles.canvas.overflow || '';
+        canvasEl.style.transform = origStyles.canvas.transform || '';
+
+        if (panelsGrid && origStyles.panelsGrid) {
+          panelsGrid.style.flex = origStyles.panelsGrid.flex || '';
+          panelsGrid.style.minHeight = origStyles.panelsGrid.minHeight || '';
+          panelsGrid.style.display = origStyles.panelsGrid.display || '';
+        }
+
+        panels.forEach((p, idx) => {
+          const s = origStyles.panels[idx];
+          if (s) {
+            p.style.flex = s.flex || '';
+            p.style.minHeight = s.minHeight || '';
+            p.style.overflow = s.overflow || '';
+          }
+        });
+
+        panelBodies.forEach((pb, idx) => {
+          const s = origStyles.panelBodies[idx];
+          if (s) {
+            pb.style.flex = s.flex || '';
+            pb.style.minHeight = s.minHeight || '';
+            pb.style.overflow = s.overflow || '';
+            pb.style.padding = s.padding || '';
+          }
+        });
+
+        tableWraps.forEach((tw, idx) => {
+          const s = origStyles.tableWraps[idx];
+          if (s) {
+            tw.style.overflow = s.overflow || '';
+            tw.style.height = s.height || '';
+            tw.style.flex = s.flex || '';
+            tw.style.minHeight = s.minHeight || '';
+          }
+        });
+
+        html.dataset.theme = prevTheme;
+        if (filteredRows.length > 0) {
+          renderTopNeg(filteredRows);
+          renderTopQuality(filteredRows);
+        }
+
+        const link = document.createElement('a');
+        link.download = `Мониторинг_стройки_дашборд.png`;
+        link.href = snap.toDataURL('image/png');
+        link.click();
+        showToast('PNG дашборда скачан', 'success');
+      } catch (err) {
+        showToast('Ошибка: ' + err.message, 'error');
+        console.error(err);
+      }
+    }
+
+    document.getElementById('btnPngReport').addEventListener('click', captureDashboardPng);
+
+    // ─── ИНИЦИАЛИЗАЦИЯ ──────────────────────────────────────────────────────
+    (function initEmpty() {
+      allRows = [];
+      filteredRows = [];
+      availableDates = [];
+      currentObjectName = null;
+      document.getElementById('subtitle').textContent = 'Загрузите Excel-файл для отображения данных';
+      clearDashboard();
+      updateFilterUI();
+      updateDatePickerValue();
+
+      document.documentElement.dataset.theme = 'light';
+
+      document.getElementById('negAnti').checked = true;
+      document.getElementById('qualAnti').checked = true;
+      NEG_ANTI = true;
+      QUAL_ANTI = true;
+
+      updateTopControlsStyle('neg', true);
+      updateTopControlsStyle('qual', true);
+    })();
+  </script>
+</body>
+</html>
