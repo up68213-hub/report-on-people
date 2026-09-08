@@ -77,7 +77,15 @@ const seedDevUsers = db.transaction(() => {
   insert.run('Наблюдатель', 'observer@example.local', 'observer');
 });
 
-if (config.authMode === 'dev') seedDevUsers();
+if (config.authMode === 'dev') {
+  seedDevUsers();
+  db.prepare(`
+    INSERT OR IGNORE INTO user_object_access (user_id, object_id, object_role)
+    SELECT u.user_id, o.object_id, 'project_manager'
+    FROM users u CROSS JOIN objects o
+    WHERE u.global_role = 'project_manager' AND o.is_active = 1
+  `).run();
+}
 
 export function closeDatabase() {
   db.close();

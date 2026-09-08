@@ -38,7 +38,7 @@ function optionItems(options) {
 }
 
 export function ComboBox({ options = [], value = '', onChange, placeholder = 'Выберите', disabled = false,
-  allowCustom = false, className = '', invalid = false, ariaLabel }) {
+  allowCustom = false, clearable = true, className = '', invalid = false, ariaLabel }) {
   const id = useId();
   const rootRef = useRef(null);
   const listRef = useRef(null);
@@ -57,19 +57,26 @@ export function ComboBox({ options = [], value = '', onChange, placeholder = 'В
   }, [items, query, selected?.label]);
 
   useEffect(() => { setQuery(selected?.label ?? (allowCustom ? String(value || '') : '')); }, [selected?.label, value, allowCustom]);
+  const selectedIndex = Math.max(0, items.findIndex((item) => item.value === String(value)));
   useEffect(() => {
     if (!open) return;
-    const rect = rootRef.current?.getBoundingClientRect();
-    if (rect) setPosition({ left: rect.left, top: rect.bottom + 6, width: Math.max(rect.width, 220) });
+    const updatePosition = () => {
+      const rect = rootRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const width = Math.min(Math.max(rect.width, 220), window.innerWidth - 16);
+      const left = Math.max(8, Math.min(rect.left, window.innerWidth - width - 8));
+      const roomBelow = window.innerHeight - rect.bottom - 8;
+      const roomAbove = rect.top - 8;
+      const maxHeight = Math.max(120, Math.min(280, Math.max(roomBelow, roomAbove) - 6));
+      const opensUp = roomBelow < 180 && roomAbove > roomBelow;
+      setPosition({ left, top: opensUp ? undefined : rect.bottom + 6, bottom: opensUp ? window.innerHeight - rect.top + 6 : undefined, width, maxHeight });
+    };
+    updatePosition();
     const close = (event) => {
       if (rootRef.current?.contains(event.target) || listRef.current?.contains(event.target)) return;
       setOpen(false);
       if (allowCustom) onChange(query.trim());
       else setQuery(selected?.label || '');
-    };
-    const updatePosition = () => {
-      const nextRect = rootRef.current?.getBoundingClientRect();
-      if (nextRect) setPosition({ left: nextRect.left, top: nextRect.bottom + 6, width: Math.max(nextRect.width, 220) });
     };
     document.addEventListener('mousedown', close);
     window.addEventListener('resize', updatePosition);
@@ -81,6 +88,12 @@ export function ComboBox({ options = [], value = '', onChange, placeholder = 'В
     };
   }, [open, allowCustom, onChange, query, selected?.label]);
 
+  const openList = ({ selectText = false } = {}) => {
+    if (disabled) return;
+    setOpen(true);
+    setActive(selectedIndex);
+    if (selectText) requestAnimationFrame(() => inputRef.current?.select());
+  };
   const choose = (item) => {
     onChange(item.value);
     setQuery(item.label);
@@ -105,7 +118,9 @@ export function ComboBox({ options = [], value = '', onChange, placeholder = 'В
   };
   const keyDown = (event) => {
     if (event.key === 'ArrowDown') {
-      event.preventDefault(); setOpen(true); setActive((index) => Math.min(index + 1, filtered.length - 1));
+      event.preventDefault();
+      if (!open) { openList(); return; }
+      setActive((index) => Math.min(index + 1, filtered.length - 1));
     } else if (event.key === 'ArrowUp') {
       event.preventDefault(); setActive((index) => Math.max(index - 1, 0));
     } else if (event.key === 'Enter') {
@@ -115,7 +130,7 @@ export function ComboBox({ options = [], value = '', onChange, placeholder = 'В
       else if (open && filtered[active]) choose(filtered[active]);
       else commitCustom();
     } else if (event.key === 'Escape') {
-      setOpen(false); setQuery(selected?.label ?? (allowCustom ? String(value || '') : ''));
+      event.preventDefault(); setOpen(false); setQuery(selected?.label ?? (allowCustom ? String(value || '') : ''));
     }
   };
 
@@ -128,21 +143,33 @@ export function ComboBox({ options = [], value = '', onChange, placeholder = 'В
     </button>) : <div className="ui-combobox-empty">{allowCustom ? 'Нажмите Enter, чтобы добавить' : 'Ничего не найдено'}</div>}
   </div>, document.body);
 
-  return <div ref={rootRef} className={`ui-combobox ${open ? 'open' : ''} ${invalid ? 'invalid' : ''} ${className}`}>
+  return <div ref={rootRef} className={`ui-combobox ${open ? 'open' : ''} ${clearable ? 'clearable' : ''} ${invalid ? 'invalid' : ''} ${className}`}>
     <input ref={inputRef} role="combobox" aria-label={ariaLabel} aria-expanded={open} aria-controls={`${id}-list`}
       aria-autocomplete="list" autoComplete="off" value={query} disabled={disabled} placeholder={placeholder}
       onFocus={() => {
         focusValueRef.current = { value: String(value || ''), label: selected?.label ?? String(value || '') };
-        setQuery(''); setOpen(true); setActive(0);
+        openList({ selectText: true });
       }}
       onChange={(event) => { setQuery(event.target.value); setOpen(true); setActive(0); if (allowCustom) onChange(event.target.value); }}
       onBlur={commitCustom} onKeyDown={keyDown} />
-    {!!query && !disabled && <button type="button" className="ui-combobox-clear" aria-label="Очистить"
+    {clearable && !!query && !disabled && <button type="button" className="ui-combobox-clear" aria-label="Очистить"
       onMouseDown={(event) => event.preventDefault()} onClick={() => { setQuery(''); onChange(''); inputRef.current?.focus(); }}>×</button>}
     <button type="button" className="ui-combobox-arrow" aria-label="Открыть список" disabled={disabled}
-      onMouseDown={(event) => event.preventDefault()} onClick={() => { setOpen((current) => !current); inputRef.current?.focus(); }}>⌄</button>
+      aria-expanded={open} onMouseDown={(event) => event.preventDefault()} onClick={() => {
+        if (open) { setOpen(false); inputRef.current?.focus(); }
+        else { inputRef.current?.focus(); openList(); }
+      }}>⌄</button>
     {dropdown}
   </div>;
+}
+
+export function ClearableInput({ value = '', onChange, className = '', clearLabel = 'Очистить поле', ...props }) {
+  return <span className={`ui-clearable-input ${className}`}>
+    <input {...props} value={value} onChange={onChange} />
+    {String(value).length > 0 && !props.disabled && <button type="button" className="ui-input-clear" aria-label={clearLabel}
+      onMouseDown={(event) => event.preventDefault()}
+      onClick={() => onChange({ target: { value: '' } })}>×</button>}
+  </span>;
 }
 
 function isoDate(date) {
@@ -200,7 +227,7 @@ export function CalendarField({ value = '', onChange, allowedDates = null, disab
   </div>;
 }
 
-export function DateRangeField({ start = '', end = '', onChange, allowedDates = null, disabled = false, className = '', ariaLabel = 'Дата или период' }) {
+export function DateRangeField({ start = '', end = '', onChange, allowedDates = null, disabled = false, className = '', ariaLabel = 'Дата или период', placeholder = 'Выберите дату или период', clearable = false }) {
   const rootRef = useRef(null);
   const popupRef = useRef(null);
   const initial = parseDate(start) || parseDate(end) || new Date();
@@ -253,7 +280,7 @@ export function DateRangeField({ start = '', end = '', onChange, allowedDates = 
     })}</div>
     {mode === 'range' && <div className="ui-range-hint">{rangeStart ? 'Выберите окончание периода' : 'Выберите начало периода'}</div>}
   </div>, document.body);
-  return <div ref={rootRef} className={`ui-date-field ui-range-field ${className}`}><button type="button" className="ui-date-input" aria-label={ariaLabel} disabled={disabled} onClick={() => setOpen((value) => !value)}><span>{display || 'Выберите дату или период'}</span><span className="ui-date-icon"><CalendarIcon /></span></button>{popup}</div>;
+  return <div ref={rootRef} className={`ui-date-field ui-range-field ${display && clearable ? 'clearable' : ''} ${className}`}><button type="button" className="ui-date-input" aria-label={ariaLabel} disabled={disabled} onClick={() => setOpen((value) => !value)}><span>{display || placeholder}</span><span className="ui-date-icon"><CalendarIcon /></span></button>{display && clearable && !disabled && <button type="button" className="ui-date-clear" aria-label="Очистить период" onClick={(event) => { event.stopPropagation(); setRangeStart(''); setOpen(false); onChange('', ''); }}>×</button>}{popup}</div>;
 }
 
 function formatUiDate(value) {

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api, getDevUserId, setDevUserId } from './api.js';
-import { ComboBox } from './UiControls.jsx';
+import { ClearableInput, ComboBox } from './UiControls.jsx';
 import Dialog from './Dialog.jsx';
 
 const roleNames = {
@@ -16,7 +16,7 @@ function EditingInput({ value, onSave }) {
     setDraft(next);
     if (next !== value) onSave(next);
   };
-  return <input className="admin-inline-input" value={draft} title="Enter — сохранить, Esc — отменить"
+  return <ClearableInput className="admin-inline-clearable" value={draft} title="Enter — сохранить, Esc — отменить"
     onChange={(event) => setDraft(event.target.value)}
     onFocus={(event) => event.target.select()}
     onBlur={commit}

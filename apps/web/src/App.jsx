@@ -4,9 +4,9 @@ import ManualEntryModal from './ManualEntryModal.jsx';
 import EntrySetupModal from './EntrySetupModal.jsx';
 import ResourceDepartmentPage from './ResourceDepartmentPage.jsx';
 import AdminPage from './AdminPage.jsx';
-import { CalendarField, ComboBox } from './UiControls.jsx';
+import { ClearableInput, ComboBox, DateRangeField } from './UiControls.jsx';
 import Dialog from './Dialog.jsx';
-import { api } from './api.js';
+import { api, setDevUserId } from './api.js';
 import {
   CRITERIA, aggregateTable, calculateKpis, decisionMeta,
   isContractorFault, isOwnForces, qualityGrade,
@@ -208,23 +208,34 @@ function Ranking({ records, type, filters, toggleFilter }) {
   );
 }
 
-function FilterModal({ open, onClose, records, filters, toggleFilter, clear, clearGroup }) {
+function FilterModal({ open, onClose, records, filters, setFilters }) {
+  const [searches, setSearches] = useState({});
+  const [draft, setDraft] = useState(filters);
+  useEffect(() => { if (open) { setDraft(Object.fromEntries(Object.entries(filters).map(([key, values]) => [key, [...values]]))); setSearches({}); } }, [open, filters]);
   const choices = (field) => [...new Set(records.map((row) => row[field]).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ru'));
   const groups = [
     ['Подрядчики', 'contractors', 'contractor'], ['Вид работы', 'workTypes', 'work_type'],
     ['Причина', 'reasons', 'cause'], ['Решение', 'decisions', 'decision'],
   ];
-  const orderedGroups = [...groups].sort((a, b) => Number(filters[b[1]].length > 0) - Number(filters[a[1]].length > 0));
-  return <Dialog open={open} onClose={onClose} title={<><span className="accent">Фильтры</span> данных</>}>
-    {orderedGroups.map(([title, key, field]) => <div className={`filter-section ${filters[key].length ? 'active' : ''}`} key={key}>
-      <div className="filter-section-title"><span>{title}{filters[key].length ? ` · ${filters[key].length}` : ''}</span>{filters[key].length > 0 && <button onClick={() => clearGroup(key)}>Очистить</button>}</div><div className="chip-group">
-        {choices(field).map((value) => <button key={value} className={`chip ${filters[key].includes(value) ? 'selected' : ''}`}
-          onClick={() => toggleFilter(key, value)}>{value}</button>)}
-      </div>
-    </div>)}
-    <div className="app-filter-actions">
-      <button className="filter-clear-btn" onClick={clear}>Очистить фильтры</button>
-    </div>
+  const toggleDraft = (key, value) => setDraft((current) => ({ ...current, [key]: current[key].includes(value) ? current[key].filter((item) => item !== value) : [...current[key], value] }));
+  const clearDraft = () => setDraft({ contractors: [], workTypes: [], reasons: [], decisions: [] });
+  const selectedCount = Object.values(draft).reduce((sum, values) => sum + values.length, 0);
+  const header = <div className="report-filter-head"><div><div className="report-filter-title">ФИЛЬТРЫ <span>ДАННЫХ</span></div><div className="report-filter-subtitle">Отметьте значения — фильтры складываются между собой</div></div><button type="button" onClick={onClose} aria-label="Закрыть">×</button></div>;
+  const footer = <><span className="report-filter-count">Выбрано значений: {selectedCount}</span><div className="report-filter-buttons"><button type="button" className="flat" onClick={clearDraft}>Очистить фильтры</button><button type="button" className="outline" onClick={onClose}>Отменить</button><button type="button" className="primary" onClick={() => { setFilters(draft); onClose(); }}>Применить</button></div></>;
+  return <Dialog open={open} onClose={onClose} header={header} footer={footer} showClose={false} modalClassName="report-filter-modal" overlayClassName="report-filter-overlay" bodyClassName="report-filter-body" footerClassName="report-filter-foot">
+    {groups.map(([title, key, field]) => {
+      const query = searches[key] || '';
+      const visibleChoices = choices(field).filter((value) => value.toLocaleLowerCase('ru-RU').includes(query.trim().toLocaleLowerCase('ru-RU')));
+      const allVisibleSelected = visibleChoices.length > 0 && visibleChoices.every((value) => draft[key].includes(value));
+      return <section className="report-filter-section" key={key}>
+        <div className="report-filter-section-head"><span>{title}</span>{draft[key].length > 0 && <b>{draft[key].length}</b>}<button type="button" onClick={() => setDraft((current) => ({ ...current, [key]: allVisibleSelected ? current[key].filter((value) => !visibleChoices.includes(value)) : [...new Set([...current[key], ...visibleChoices])] }))}>{allVisibleSelected ? 'снять все' : 'выбрать все'}</button></div>
+        <ClearableInput className="filter-list-search" value={query} onChange={(event) => setSearches((current) => ({ ...current, [key]: event.target.value }))} placeholder={`Поиск: ${title.toLocaleLowerCase('ru-RU')}`} aria-label={`Поиск по фильтру ${title}`} />
+        <div className="filter-option-list">
+          {visibleChoices.map((value) => <button type="button" key={value} className={draft[key].includes(value) ? 'selected' : ''} onClick={() => toggleDraft(key, value)}><span className="filter-option-check">✓</span><span>{value}</span></button>)}
+          {!visibleChoices.length && <div className="filter-option-empty">Ничего не найдено</div>}
+        </div>
+      </section>;
+    })}
   </Dialog>;
 }
 
@@ -345,6 +356,8 @@ export default function App() {
   const [records, setRecords] = useState([]);
   const [dates, setDates] = useState([]);
   const [date, setDate] = useState('');
+  const [periodStart, setPeriodStart] = useState('');
+  const [periodEnd, setPeriodEnd] = useState('');
   const [filters, setFilters] = useState({ contractors: [], workTypes: [], reasons: [], decisions: [] });
   const [filterOpen, setFilterOpen] = useState(false);
   const [summaryOpen, setSummaryOpen] = useState(false);
@@ -380,7 +393,10 @@ export default function App() {
       const data = await api(`/api/records?objectId=${encodeURIComponent(selectedObject)}`);
       setRecords(data.records);
       setDates(data.availableDates);
-      setDate((current) => data.availableDates.includes(current) ? current : data.availableDates.at(-1) || '');
+      setDate((current) => {
+        const next = data.availableDates.includes(current) ? current : data.availableDates.at(-1) || '';
+        setPeriodStart(next); setPeriodEnd(next); return next;
+      });
     } catch (error) { notify(error.message, 'error', loadRecords); }
     finally { setLoading(false); }
   };
@@ -395,7 +411,7 @@ export default function App() {
   useEffect(() => { if (session) loadRecords(); }, [session, selectedObject]);
   useEffect(() => { document.documentElement.dataset.theme = theme; }, [theme]);
 
-  const dateRows = useMemo(() => records.filter((row) => !date || row.report_date === date), [records, date]);
+  const dateRows = useMemo(() => records.filter((row) => (!periodStart || row.report_date >= periodStart) && (!periodEnd || row.report_date <= periodEnd)), [records, periodStart, periodEnd]);
   const visibleRecords = useMemo(() => dateRows.filter((row) =>
     (!filters.contractors.length || filters.contractors.includes(row.contractor)) &&
     (!filters.workTypes.length || filters.workTypes.includes(row.work_type)) &&
@@ -406,7 +422,7 @@ export default function App() {
   const canEnterData = ['administrator', 'project_manager'].includes(session?.user.role);
   const filledRows = dateRows.filter((row) => row.actual_people !== null && row.actual_people !== undefined).length;
   const today = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
-  const entryLabel = date && date < today ? 'Просмотреть отчёт' : filledRows && filledRows < dateRows.length ? 'Продолжить заполнение' : filledRows && dateRows.length ? 'Исправить сегодня' : 'Внести данные';
+  const entryLabel = date && date < today ? 'Заполнить отчёт' : filledRows && filledRows < dateRows.length ? 'Продолжить заполнение' : filledRows && dateRows.length ? 'Исправить сегодня' : 'Внести данные';
 
   const toggleFilter = (key, value) => setFilters((old) => ({ ...old, [key]: old[key].includes(value) ? old[key].filter((x) => x !== value) : [...old[key], value] }));
   const clearFilters = () => setFilters({ contractors: [], workTypes: [], reasons: [], decisions: [] });
@@ -415,6 +431,9 @@ export default function App() {
   const contextObject = selectedObject === 'all' ? 'Все доступные объекты' : objects.find((item) => String(item.id) === String(selectedObject))?.name || 'Объект';
   const shortName = (name = '') => { const parts = name.trim().split(/\s+/); return parts.length > 1 ? `${parts[0]} ${parts[1][0]}.` : name; };
   const updatedContext = contextRecord?.updated_at ? `${selectedObject === 'all' ? `Данные по ${new Set(dateRows.map((row) => row.object_id)).size} объектам • последнее ` : ''}обновлено ${new Date(`${contextRecord.updated_at.replace(' ', 'T')}Z`).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}${selectedObject !== 'all' && contextRecord.updated_by ? `, ${shortName(contextRecord.updated_by)}` : ''}` : '';
+  const formatShortDate = (value) => value ? new Date(`${value}T00:00:00`).toLocaleDateString('ru-RU') : '';
+  const periodLabel = periodStart ? (periodEnd && periodEnd !== periodStart ? `${formatShortDate(periodStart)} — ${formatShortDate(periodEnd)}` : formatShortDate(periodStart)) : '';
+  const clearHeaderFilters = () => { setSelectedObject('all'); setPeriodStart(''); setPeriodEnd(''); setDate(''); clearFilters(); };
   const releaseManualLock = () => {
     if (!manualContext.readOnly && manualContext.objectId && manualContext.reportDate) api('/api/manual/lock', { method: 'DELETE', body: JSON.stringify({ objectId: Number(manualContext.objectId), reportDate: manualContext.reportDate }) }).catch(() => {});
   };
@@ -463,11 +482,11 @@ export default function App() {
         <button className={activeSection === 'resources' ? 'active' : ''} onClick={() => openSection('resources')}><Icon name="edit" /><span>Департамент ресурсов</span></button>
         {session?.user.role === 'administrator' && <button className={activeSection === 'admin' ? 'active' : ''} onClick={() => openSection('admin')}><Icon name="admin" /><span>Администрирование</span></button>}
       </nav>
-      <div className="sidebar-footer"><div className="sidebar-user"><strong>{session?.user.name || 'Загрузка…'}</strong><span>{roleNames[session?.user.role] || ''}</span></div><button className="sidebar-theme" onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}><Icon name={theme === 'light' ? 'moon' : 'sun'} /><span>{theme === 'light' ? 'Тёмная тема' : 'Светлая тема'}</span></button></div>
+      <div className="sidebar-footer">{session?.authMode === 'dev' && <label className="sidebar-role-switch"><span>Тестовая роль</span><ComboBox value={session.user.id} onChange={setDevUserId} options={(session.devUsers || []).map((user) => ({ value: user.id, label: `${user.name} — ${roleNames[user.role]}` }))} /></label>}<div className="sidebar-user"><strong>{session?.user.name || 'Загрузка…'}</strong><span>{roleNames[session?.user.role] || ''}</span></div><button className="sidebar-theme" onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}><Icon name={theme === 'light' ? 'moon' : 'sun'} /><span>{theme === 'light' ? 'Тёмная тема' : 'Светлая тема'}</span></button></div>
     </aside>
 
     {activeSection === 'people' && <div className="canvas" ref={canvasRef}>
-      <header className="people-heading"><div className="people-heading-title"><h1>ОТЧЕТ ПО <span className="accent">ЛЮДЯМ</span></h1></div><div className="people-heading-filters"><label className="filter-field"><span>Объект</span><ComboBox value={selectedObject} onChange={setSelectedObject} options={[{ value: 'all', label: 'Все доступные объекты' }, ...objects.map((item) => ({ value: item.id, label: item.name }))]} /></label><label className="filter-field date"><span>Дата</span><CalendarField value={date || ''} onChange={setDate} allowedDates={dates} /></label><button className={`more-filters ${activeFilterCount ? 'has-active' : ''}`} title={filterSummary || 'Дополнительные фильтры не выбраны'} aria-label={filterSummary || 'Открыть дополнительные фильтры'} onClick={() => setFilterOpen(true)}>Ещё фильтры{activeFilterCount > 0 && <b>{activeFilterCount}</b>}<span className="filter-summary-tooltip">{filterSummary || 'Нет активных условий'}</span></button>{activeFilterCount > 0 && <button className="clear-all-filters" onClick={clearFilters}>Сбросить всё</button>}<div className="people-update-context">{loading ? 'Обновляем…' : updatedContext}</div></div><div className="people-heading-actions">{canEnterData && <button className="people-entry-primary manual-entry-trigger" onClick={() => setEntrySetupOpen(true)}><Icon name="edit" />{entryLabel}</button>}<span className="desktop-secondary"><span className="action-divider" /><button className="people-text-action" onClick={() => setSummaryOpen(true)}>Резюме</button>{visibleRecords.length > 0 && <><span className="action-divider" /><button className="people-text-action" onClick={() => capture(canvasRef.current, 'Мониторинг_стройки_дашборд.png')}>Скачать</button></>}</span><details className="mobile-actions"><summary>⋯</summary><button onClick={() => setSummaryOpen(true)}>Резюме</button>{visibleRecords.length > 0 && <button onClick={() => capture(canvasRef.current, 'Мониторинг_стройки_дашборд.png')}>Скачать</button>}</details></div></header>
+      <header className="people-heading report-prototype-heading"><div className="people-heading-title"><h1>ОТЧЁТ ПО <span className="accent">ЛЮДЯМ</span></h1><div className="people-update-context"><span />{loading ? 'обновляем…' : updatedContext}</div></div><div className="people-heading-filters"><label className="filter-field report-object-field"><ComboBox value={selectedObject} onChange={(value) => setSelectedObject(value || 'all')} options={[{ value: 'all', label: 'Все объекты' }, ...objects.map((item) => ({ value: item.id, label: item.name }))]} placeholder="Все объекты" /></label><div className="filter-field report-period-field"><DateRangeField start={periodStart} end={periodEnd} onChange={(start, end) => { setPeriodStart(start); setPeriodEnd(end); setDate(end || start); }} allowedDates={dates} placeholder="Весь период" clearable /></div><button className={`more-filters ${activeFilterCount ? 'has-active' : ''}`} title={filterSummary || 'Дополнительные фильтры не выбраны'} aria-label={filterSummary || 'Открыть дополнительные фильтры'} onClick={() => setFilterOpen(true)}>Ещё фильтры{activeFilterCount > 0 && <b>{activeFilterCount}</b>}</button><button type="button" className="report-header-reset" onClick={clearHeaderFilters}>Сбросить фильтры</button></div><div className="people-heading-actions">{canEnterData && <button className="people-entry-primary manual-entry-trigger" onClick={() => setEntrySetupOpen(true)}><Icon name="edit" />Заполнить отчёт</button>}<button className="people-text-action" onClick={() => setSummaryOpen(true)}>Резюме</button>{visibleRecords.length > 0 && <button className="people-text-action" onClick={() => capture(canvasRef.current, 'Мониторинг_стройки_дашборд.png')}>Скачать</button>}</div></header>
       {loading ? <DashboardSkeleton /> : !visibleRecords.length ? <DashboardEmptyState canEdit={canEnterData} hasFilters={activeFilterCount > 0}
         hasDates={dates.length > 1} onEnter={() => setEntrySetupOpen(true)} onReset={clearFilters}
         onDate={() => document.querySelector('.topbar-field .ui-date-input')?.click()} /> : <><Kpis records={visibleRecords} />
@@ -484,7 +503,7 @@ export default function App() {
     {activeSection === 'admin' && <main className="section-host"><AdminPage session={session} notify={notify} onObjectsChanged={() => loadObjects()} onRecordsChanged={() => loadRecords()} /></main>}
 
     <FilterModal open={filterOpen} onClose={() => setFilterOpen(false)} records={records}
-      filters={filters} toggleFilter={toggleFilter} clear={clearFilters} clearGroup={clearFilterGroup} />
+      filters={filters} setFilters={setFilters} />
     <CriteriaModal group={criteriaGroup} onClose={() => setCriteriaGroup(null)} />
     <SummaryModal open={summaryOpen} onClose={() => setSummaryOpen(false)} records={visibleRecords}
       onPng={(target) => capture(target, 'Краткое_резюме.png')} />
