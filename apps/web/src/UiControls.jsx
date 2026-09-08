@@ -38,7 +38,7 @@ function optionItems(options) {
 }
 
 export function ComboBox({ options = [], value = '', onChange, placeholder = 'Выберите', disabled = false,
-  allowCustom = false, clearable = true, className = '', invalid = false, ariaLabel }) {
+  allowCustom = false, clearable = true, className = '', invalid = false, ariaLabel, size = 'standard' }) {
   const id = useId();
   const rootRef = useRef(null);
   const listRef = useRef(null);
@@ -143,7 +143,7 @@ export function ComboBox({ options = [], value = '', onChange, placeholder = 'В
     </button>) : <div className="ui-combobox-empty">{allowCustom ? 'Нажмите Enter, чтобы добавить' : 'Ничего не найдено'}</div>}
   </div>, document.body);
 
-  return <div ref={rootRef} className={`ui-combobox ${open ? 'open' : ''} ${clearable ? 'clearable' : ''} ${invalid ? 'invalid' : ''} ${className}`}>
+  return <div ref={rootRef} className={`ui-combobox ui-control-${size} ${open ? 'open' : ''} ${clearable ? 'clearable' : ''} ${invalid ? 'invalid' : ''} ${className}`}>
     <input ref={inputRef} role="combobox" aria-label={ariaLabel} aria-expanded={open} aria-controls={`${id}-list`}
       aria-autocomplete="list" autoComplete="off" value={query} disabled={disabled} placeholder={placeholder}
       onFocus={() => {
@@ -185,7 +185,7 @@ function CalendarIcon() {
   return <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3" /><path d="M8 3.5v3M16 3.5v3M3.5 9.5h17" /></svg>;
 }
 
-export function CalendarField({ value = '', onChange, allowedDates = null, disabled = false, invalid = false, className = '', ariaLabel = 'Дата' }) {
+export function CalendarField({ value = '', onChange, allowedDates = null, disabled = false, invalid = false, className = '', ariaLabel = 'Дата', size = 'standard' }) {
   const rootRef = useRef(null);
   const popupRef = useRef(null);
   const selected = parseDate(value);
@@ -221,18 +221,17 @@ export function CalendarField({ value = '', onChange, allowedDates = null, disab
         onClick={() => { onChange(iso); setOpen(false); }}>{day.getDate()}</button>;
     })}</div>
   </div>, document.body);
-  return <div ref={rootRef} className={`ui-date-field ${invalid ? 'invalid' : ''} ${className}`}>
+  return <div ref={rootRef} className={`ui-date-field ui-control-${size} ${invalid ? 'invalid' : ''} ${className}`}>
     <button type="button" className="ui-date-input" aria-label={ariaLabel} disabled={disabled} onClick={() => setOpen((current) => !current)}><span>{display || 'Выберите дату'}</span><span className="ui-date-icon"><CalendarIcon /></span></button>
     {popup}
   </div>;
 }
 
-export function DateRangeField({ start = '', end = '', onChange, allowedDates = null, disabled = false, className = '', ariaLabel = 'Дата или период', placeholder = 'Выберите дату или период', clearable = false }) {
+export function DateRangeField({ start = '', end = '', onChange, allowedDates = null, disabled = false, className = '', ariaLabel = 'Дата или период', placeholder = 'Выберите дату или период', clearable = false, size = 'standard' }) {
   const rootRef = useRef(null);
   const popupRef = useRef(null);
   const initial = parseDate(start) || parseDate(end) || new Date();
   const [open, setOpen] = useState(false);
-  const [mode, setMode] = useState(start && end && start !== end ? 'range' : 'single');
   const [month, setMonth] = useState(initial);
   const [rangeStart, setRangeStart] = useState('');
   const [position, setPosition] = useState(null);
@@ -242,7 +241,7 @@ export function DateRangeField({ start = '', end = '', onChange, allowedDates = 
     if (!open) return;
     const updatePosition = () => {
       const rect = rootRef.current?.getBoundingClientRect();
-      if (rect) setPosition({ left: Math.max(8, Math.min(rect.right - 302, window.innerWidth - 310)), top: rect.bottom + 6 });
+      if (rect) { const popupWidth = Math.min(668, window.innerWidth - 16); setPosition({ left: Math.max(8, Math.min(rect.left, window.innerWidth - popupWidth - 8)), top: rect.bottom + 6 }); }
     };
     updatePosition();
     const close = (event) => {
@@ -259,28 +258,42 @@ export function DateRangeField({ start = '', end = '', onChange, allowedDates = 
     };
   }, [open]);
 
-  const first = new Date(month.getFullYear(), month.getMonth(), 1);
-  const gridStart = new Date(first); gridStart.setDate(1 - ((first.getDay() + 6) % 7));
-  const days = Array.from({ length: 42 }, (_, index) => { const day = new Date(gridStart); day.setDate(gridStart.getDate() + index); return day; });
   const choose = (iso) => {
-    if (mode === 'single') { onChange(iso, iso); setOpen(false); return; }
     if (!rangeStart) { setRangeStart(iso); return; }
     const nextStart = rangeStart < iso ? rangeStart : iso; const nextEnd = rangeStart < iso ? iso : rangeStart;
     onChange(nextStart, nextEnd); setRangeStart(''); setOpen(false);
   };
   const display = start ? (end && end !== start ? `${formatUiDate(start)} — ${formatUiDate(end)}` : formatUiDate(start)) : '';
-  const popup = open && position && createPortal(<div ref={popupRef} className="ui-calendar ui-range-calendar" style={position}>
-    <div className="ui-range-modes"><button type="button" className={mode === 'single' ? 'active' : ''} onClick={() => { setMode('single'); setRangeStart(''); }}>Одна дата</button><button type="button" className={mode === 'range' ? 'active' : ''} onClick={() => { setMode('range'); setRangeStart(''); }}>Период</button></div>
-    <div className="ui-calendar-head"><button type="button" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))}>‹</button><strong>{month.toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' })}</strong><button type="button" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))}>›</button></div>
+  const calendarDays = (base) => {
+    const first = new Date(base.getFullYear(), base.getMonth(), 1);
+    const gridStart = new Date(first); gridStart.setDate(1 - ((first.getDay() + 6) % 7));
+    return Array.from({ length: 42 }, (_, index) => { const day = new Date(gridStart); day.setDate(gridStart.getDate() + index); return day; });
+  };
+  const secondMonth = new Date(month.getFullYear(), month.getMonth() + 1, 1);
+  const available = allowedDates?.length ? [...allowedDates].sort() : [];
+  const presetEnd = available.at(-1) || isoDate(new Date());
+  const applyPreset = (kind) => {
+    if (kind === 'all') { onChange(available[0] || '', available.at(-1) || ''); setOpen(false); return; }
+    const endDate = parseDate(presetEnd) || new Date();
+    const startDate = new Date(endDate);
+    if (kind === 'month') startDate.setDate(1);
+    else startDate.setDate(endDate.getDate() - (Number(kind) - 1));
+    onChange(isoDate(startDate), presetEnd); setOpen(false);
+  };
+  const renderMonth = (base, firstPanel) => <div className="ui-calendar-month" key={`${base.getFullYear()}-${base.getMonth()}`}>
+    <div className="ui-calendar-head"><button type="button" aria-label="Предыдущий месяц" style={{ visibility: firstPanel ? 'visible' : 'hidden' }} onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))}>‹</button><strong>{base.toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' })}</strong><button type="button" aria-label="Следующий месяц" style={{ visibility: firstPanel ? 'hidden' : 'visible' }} onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))}>›</button></div>
     <div className="ui-calendar-week">{['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'].map((day) => <span key={day}>{day}</span>)}</div>
-    <div className="ui-calendar-days">{days.map((day) => {
-      const iso = isoDate(day); const enabled = !allowed || allowed.has(iso); const selected = iso === start || iso === end || iso === rangeStart;
+    <div className="ui-calendar-days">{calendarDays(base).map((day) => {
+      const iso = isoDate(day); const enabled = !allowed || allowed.has(iso); const selectedDay = iso === start || iso === end || iso === rangeStart;
       const inRange = Boolean(start && end && start !== end && iso > start && iso < end);
-      return <button type="button" key={iso} disabled={!enabled} className={`${day.getMonth() !== month.getMonth() ? 'adjacent' : ''} ${selected ? 'selected' : ''} ${inRange ? 'in-range' : ''} ${iso === isoDate(new Date()) ? 'today' : ''}`} onClick={() => choose(iso)}>{day.getDate()}</button>;
+      return <button type="button" key={iso} disabled={!enabled} className={`${day.getMonth() !== base.getMonth() ? 'adjacent' : ''} ${selectedDay ? 'selected' : ''} ${inRange ? 'in-range' : ''} ${iso === isoDate(new Date()) ? 'today' : ''}`} onClick={() => choose(iso)}>{day.getDate()}</button>;
     })}</div>
-    {mode === 'range' && <div className="ui-range-hint">{rangeStart ? 'Выберите окончание периода' : 'Выберите начало периода'}</div>}
+  </div>;
+  const popup = open && position && createPortal(<div ref={popupRef} className="ui-calendar ui-range-calendar" style={position}>
+    <aside className="ui-calendar-presets"><button type="button" onClick={() => { onChange(presetEnd, presetEnd); setOpen(false); }}>Сегодня</button><button type="button" onClick={() => applyPreset('7')}>Последние 7 дней</button><button type="button" onClick={() => applyPreset('30')}>Последние 30 дней</button><button type="button" onClick={() => applyPreset('month')}>Текущий месяц</button><button type="button" onClick={() => applyPreset('all')}>Весь период</button><small>{rangeStart ? 'Выберите окончание периода' : 'Клик — начало периода, второй клик — конец'}</small></aside>
+    <div className="ui-calendar-months">{renderMonth(month, true)}{renderMonth(secondMonth, false)}</div>
   </div>, document.body);
-  return <div ref={rootRef} className={`ui-date-field ui-range-field ${display && clearable ? 'clearable' : ''} ${className}`}><button type="button" className="ui-date-input" aria-label={ariaLabel} disabled={disabled} onClick={() => setOpen((value) => !value)}><span>{display || placeholder}</span><span className="ui-date-icon"><CalendarIcon /></span></button>{display && clearable && !disabled && <button type="button" className="ui-date-clear" aria-label="Очистить период" onClick={(event) => { event.stopPropagation(); setRangeStart(''); setOpen(false); onChange('', ''); }}>×</button>}{popup}</div>;
+  return <div ref={rootRef} className={`ui-date-field ui-range-field ui-control-${size} ${display && clearable ? 'clearable' : ''} ${className}`}><button type="button" className="ui-date-input" aria-label={ariaLabel} disabled={disabled} onClick={() => setOpen((value) => !value)}><span>{display || placeholder}</span><span className="ui-date-icon"><CalendarIcon /></span></button>{display && clearable && !disabled && <button type="button" className="ui-date-clear" aria-label="Очистить период" onClick={(event) => { event.stopPropagation(); setRangeStart(''); setOpen(false); onChange('', ''); }}>×</button>}{popup}</div>;
 }
 
 function formatUiDate(value) {

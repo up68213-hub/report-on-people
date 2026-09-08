@@ -5,6 +5,9 @@
       --surface: #FFFFFF;
       --surface-2: #E8F0FA;
       --surface-3: #DCE6F2;
+      /* Shared form controls: exact palette from the Resource Department prototype. */
+      --field: #F4F7FB;
+      --field-hover: #EAF1F9;
       --ink: #1A2A3A;
       --ink-soft: #4A5A6E;
       --ink-mute: #7A8A9E;
@@ -33,6 +36,13 @@
       --roi-good: #9DB984;
       --tag-bad-bg: #FDE8E8;
       --tag-bad-text: #C0392B;
+      --danger-bg: #FDE8E8;
+      --danger-tx: #C0392B;
+      --warn: #EECB95;
+      --warn-bg: #FBF1DF;
+      --warn-tx: #9A7028;
+      --ok-bg: #EDF3E6;
+      --ok-tx: #5C7A42;
       --on-primary: #FFFFFF;
       --font: 'Nunito', 'Helvetica Neue', Arial, sans-serif;
       --shadow-out: 0 8px 22px var(--shadow), inset 0 1px 0 rgba(255, 255, 255, 0.7);
@@ -48,6 +58,8 @@
       --surface: #162533;
       --surface-2: #1A2A42;
       --surface-3: #1E3042;
+      --field: #1A2A42;
+      --field-hover: #1E3350;
       --ink: #E8EDF2;
       --ink-soft: #A8B8C8;
       --ink-mute: #6888A8;
@@ -2145,4 +2157,3 @@
       fill: none;
       flex-shrink: 0;
     }
-  

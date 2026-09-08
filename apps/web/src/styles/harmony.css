@@ -413,19 +413,78 @@
 .ui-combobox > input:disabled,
 .ui-combobox-arrow:disabled { cursor: not-allowed; opacity: .55; }
 
+/* Canonical control sizes and states. */
+:root {
+  --ui-control-height: 36px;
+  --ui-control-height-large: 40px;
+  --ui-control-radius: 9px;
+  --ui-control-radius-large: 11px;
+}
+
+.ui-combobox,
+.ui-date-field { position: relative; }
+.ui-combobox > input,
+.ui-date-input { height: var(--ui-control-height); min-height: var(--ui-control-height); border-radius: var(--ui-control-radius); }
+.ui-control-large > input,
+.ui-date-field.ui-control-large .ui-date-input { height: var(--ui-control-height-large); min-height: var(--ui-control-height-large); border-radius: var(--ui-control-radius-large); }
+.ui-date-input { display: flex; width: 100%; align-items: center; justify-content: space-between; padding: 0 38px 0 10px; border: 1px solid transparent; background: var(--field); color: var(--ink); box-shadow: none; font-size: 12.5px; font-weight: 700; text-align: left; }
+.ui-date-input:hover { background: var(--field-hover); }
+.ui-date-input:focus-visible { border-color: var(--primary); outline: 0; background: var(--surface); box-shadow: 0 0 0 3px rgba(112,169,222,.16); }
+.ui-date-icon { position: absolute; top: 50%; right: 9px; display: grid; width: 18px; height: 18px; place-items: center; color: var(--ink-dim); transform: translateY(-50%); pointer-events: none; }
+.ui-date-icon svg { width: 14px; height: 14px; }
+.ui-date-field.invalid .ui-date-input { border-color: var(--danger); background: var(--danger-bg); }
+.ui-date-input:disabled { cursor: not-allowed; opacity: .55; }
+
+.ui-calendar { padding: 14px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); box-shadow: 0 18px 44px var(--shadow); }
+.ui-calendar-head { height: 26px; grid-template-columns: 24px 1fr 24px; }
+.ui-calendar-head button { width: 24px; height: 24px; border-radius: 7px; background: var(--field); font-size: 15px; font-weight: 900; }
+.ui-calendar-week span { padding: 4px 0; font-size: 10px; }
+.ui-calendar-days button { height: 28px; border-radius: 7px; font-size: 12.5px; font-weight: 800; }
+.ui-calendar-days button.selected { border-radius: 7px; }
+.ui-calendar-days button.in-range { border-radius: 0; }
+.ui-range-calendar { display: flex; width: max-content; max-width: calc(100vw - 16px); gap: 16px; }
+.ui-calendar-presets { display: flex; width: 158px; flex: 0 0 158px; flex-direction: column; gap: 5px; padding-right: 14px; border-right: 1px solid var(--border); }
+.ui-calendar-presets button { padding: 8px 11px; border: 0; border-radius: 8px; background: transparent; color: var(--ink-soft); font-size: 12.5px; font-weight: 800; text-align: left; white-space: nowrap; cursor: pointer; }
+.ui-calendar-presets button:hover { background: var(--primary-soft); color: var(--primary-active); }
+.ui-calendar-presets small { margin-top: auto; color: var(--ink-mute); font-size: 11px; font-weight: 700; line-height: 1.45; }
+.ui-calendar-months { display: flex; gap: 18px; }
+.ui-calendar-month { width: 210px; }
+@media(max-width:700px){.ui-range-calendar{width:min(390px,calc(100vw - 16px))}.ui-calendar-months .ui-calendar-month:nth-child(2){display:none}.ui-calendar-presets{width:135px;flex-basis:135px}.ui-calendar-month{min-width:210px}}
+
+/* Report setup modal uses the same compact controls instead of a separate 60px system. */
+.taiga-entry-setup .entry-setup-body { gap: 12px; }
+.taiga-entry-setup .taiga-field { display: grid; height: auto; gap: 7px; margin-top: 2px; }
+.taiga-entry-setup .taiga-field > span { position: static; color: var(--ink-mute); font-size: 10px; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; }
+.taiga-entry-setup .taiga-field .ui-combobox > input,
+.taiga-entry-setup .taiga-field .ui-date-input { height: var(--ui-control-height); min-height: var(--ui-control-height); padding: 0 48px 0 10px; border: 1px solid transparent; border-radius: var(--ui-control-radius); background: var(--field); box-shadow: none; color: var(--ink); font-size: 12.5px; font-weight: 700; }
+.taiga-entry-setup .taiga-field .ui-date-input { padding-right: 38px; }
+.taiga-entry-setup .taiga-field .ui-combobox.open > input,
+.taiga-entry-setup .taiga-field .ui-combobox > input:focus,
+.taiga-entry-setup .taiga-field .ui-date-input:focus-visible { border-color: var(--primary); background: var(--surface); box-shadow: 0 0 0 3px rgba(112,169,222,.16); }
+.taiga-entry-setup .taiga-field.error .ui-combobox > input,
+.taiga-entry-setup .taiga-field.error .ui-date-input { border-color: var(--danger); background: var(--danger-bg); }
+.taiga-entry-setup .taiga-field.warning .ui-date-input { border-color: var(--warn); background: var(--warn-bg); }
+.taiga-entry-setup .taiga-btn { height: 40px; padding: 0 18px; border-radius: 11px; font-size: 13.5px; }
+
+/* Inline selectors in the report table inherit the canonical compact control. */
+.v4-table .ui-combobox > input { height: var(--ui-control-height); min-height: var(--ui-control-height); padding: 0 48px 0 10px; border-radius: var(--ui-control-radius); font-size: 12.5px; font-weight: 700; }
+.v4-table .ui-combobox-clear { right: 25px; width: 18px; height: 18px; font-size: 13px; }
+.v4-table .ui-combobox-arrow { right: 7px; width: 18px; height: 18px; }
+.sidebar-role-switch .ui-combobox > input { height: var(--ui-control-height); min-height: var(--ui-control-height); border-radius: var(--ui-control-radius); font-size: 12.5px; }
+
 /* “Отчёт по людям”: header and additional filters from Шапка_и_фильтры.html. */
 .canvas .report-prototype-heading {
-  display: flex;
+  display: grid;
   min-height: 86px;
   align-items: center;
+  grid-template-columns: 220px minmax(0, 1fr) auto;
   gap: 14px;
-  margin: 0 0 20px;
+  margin: 0 0 12px;
   padding: 14px 22px;
   border-bottom: 1px solid var(--border);
-  border-radius: 16px 16px 0 0;
+  border-radius: 16px;
   background: var(--surface);
   box-shadow: 0 20px 50px var(--shadow);
-  flex-wrap: wrap;
 }
 
 .report-prototype-heading .people-heading-title {
@@ -433,7 +492,7 @@
   min-height: 40px;
   align-content: center;
   gap: 6px;
-  flex: 0 0 auto;
+  min-width: 0;
 }
 
 .report-prototype-heading .people-heading-title h1 {
@@ -450,33 +509,48 @@
   min-width: 0;
   align-items: center;
   gap: 9px;
-  flex: 1 1 650px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
-.report-prototype-heading .filter-field { display: block; margin: 0; }
+.report-prototype-heading .filter-field { display: block; height: 36px; margin: 0; }
 .report-prototype-heading .filter-field > span { display: none; }
-.report-prototype-heading .report-object-field { width: 230px; }
-.report-prototype-heading .report-period-field { width: 250px; }
+.report-prototype-heading .report-object-field { width: 190px; flex: 0 1 190px; }
+.report-prototype-heading .report-period-field { width: 190px; flex: 0 1 190px; }
 .report-prototype-heading .ui-combobox,
-.report-prototype-heading .ui-date-field { width: 100%; height: 40px; }
-.report-prototype-heading .ui-combobox > input,
-.report-prototype-heading .ui-date-input {
+.report-prototype-heading .ui-date-field { width: 100%; height: 36px; }
+.report-prototype-heading .report-object-field .ui-combobox { min-width: 0; }
+/* Header filters use the same canonical field as the Resource Department. */
+.report-prototype-heading .filter-field .ui-combobox > input,
+.report-prototype-heading .filter-field .ui-date-input {
   width: 100%;
-  height: 40px;
-  min-height: 40px;
-  border-color: transparent;
-  border-radius: 11px;
+  height: 36px;
+  min-height: 36px;
+  padding-top: 0;
+  border: 1px solid transparent;
+  border-radius: 9px;
   background: var(--field);
   box-shadow: none;
-  font-size: 13px;
+  color: var(--ink);
+  font-size: 12.5px;
   font-weight: 700;
-  line-height: 38px;
+  line-height: 1.2;
 }
-.report-prototype-heading .ui-combobox > input { padding-right: 52px; }
-.report-prototype-heading .ui-date-input { display: flex; align-items: center; justify-content: space-between; padding: 0 39px 0 12px; }
-.report-prototype-heading .ui-date-icon { position: absolute; top: 50%; right: 10px; display: grid; width: 18px; height: 18px; place-items: center; transform: translateY(-50%); }
-.report-prototype-heading .ui-date-icon svg { width: 14px; height: 14px; }
+.report-prototype-heading .filter-field .ui-combobox > input { padding-right: 48px; padding-left: 10px; }
+.report-prototype-heading .filter-field .ui-date-input { padding-right: 52px; padding-left: 10px; }
+.report-prototype-heading .filter-field .ui-combobox > input:hover,
+.report-prototype-heading .filter-field .ui-date-input:hover { background: var(--field-hover); }
+.report-prototype-heading .filter-field .ui-combobox.open > input,
+.report-prototype-heading .filter-field .ui-combobox > input:focus,
+.report-prototype-heading .filter-field .ui-date-input:focus-visible {
+  border-color: var(--primary);
+  background: var(--surface);
+  box-shadow: 0 0 0 3px rgba(112,169,222,.16);
+}
+.report-prototype-heading .filter-field .ui-combobox-clear { top: 50%; right: 25px; width: 18px; height: 18px; font-size: 13px; transform: translateY(-50%); }
+.report-prototype-heading .filter-field .ui-combobox-arrow { top: 50%; right: 7px; width: 18px; height: 18px; transform: translateY(-50%); }
+.report-prototype-heading .filter-field .ui-combobox.open .ui-combobox-arrow { transform: translateY(-50%) rotate(180deg); }
+.report-prototype-heading .filter-field .ui-date-clear { top: 50%; right: 27px; width: 18px; height: 18px; transform: translateY(-50%); }
+.report-prototype-heading .filter-field .ui-date-icon { top: 50%; right: 8px; width: 18px; height: 18px; transform: translateY(-50%); }
 
 .report-prototype-heading .ui-combobox.open > input,
 .report-prototype-heading .ui-combobox > input:focus,
@@ -510,13 +584,13 @@
 
 .report-prototype-heading .more-filters {
   display: inline-flex;
-  height: 40px;
-  min-height: 40px;
+  height: 36px;
+  min-height: 36px;
   align-items: center;
   gap: 8px;
-  padding: 0 18px;
+  padding: 0 13px;
   border: 1px solid var(--border);
-  border-radius: 11px;
+  border-radius: 9px;
   background: transparent;
   color: var(--ink-soft);
   box-shadow: none;
@@ -550,10 +624,13 @@
   align-items: center;
   gap: 8px;
   margin-left: auto;
+  white-space: nowrap;
 }
 
 .report-header-reset {
-  height: 40px;
+  display: inline-flex;
+  height: 36px;
+  align-items: center;
   padding: 0 4px;
   border: 0;
   background: transparent;
@@ -563,6 +640,7 @@
   text-decoration: underline;
   white-space: nowrap;
   cursor: pointer;
+  flex: 0 0 auto;
 }
 .report-header-reset:hover { color: var(--primary-hover); }
 
@@ -638,13 +716,17 @@
 .report-filter-buttons .primary { background: var(--primary); color: #fff; }
 .report-filter-buttons .primary:hover { background: var(--primary-hover); }
 
-@media (max-width: 1120px) {
-  .report-prototype-heading .people-heading-title { flex: 1 0 100%; }
-  .report-prototype-heading .people-heading-actions { margin-left: 0; }
+@media (max-width: 1450px) {
+  .canvas .report-prototype-heading { grid-template-columns: minmax(220px,1fr) auto; }
+  .report-prototype-heading .people-heading-title { grid-column: 1; grid-row: 1; }
+  .report-prototype-heading .people-heading-actions { grid-column: 2; grid-row: 1; }
+  .report-prototype-heading .people-heading-filters { grid-column: 1 / -1; grid-row: 2; justify-content: flex-start; }
 }
 @media (max-width: 840px) {
+  .canvas .report-prototype-heading { grid-template-columns: 1fr; }
+  .report-prototype-heading .people-heading-actions { grid-column: 1; grid-row: 2; margin-left: 0; }
+  .report-prototype-heading .people-heading-filters { grid-column: 1; grid-row: 3; flex-wrap: wrap; }
   .report-filter-body { grid-template-columns: 1fr; }
-  .report-prototype-heading .people-heading-filters { flex-basis: 100%; }
   .report-prototype-heading .report-object-field,
   .report-prototype-heading .report-period-field { width: 100%; }
 }
