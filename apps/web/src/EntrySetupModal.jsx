@@ -64,12 +64,9 @@ export default function EntrySetupModal({ open, objects, initialObjectId, onClos
 
   const actionText = readOnly ? 'Открыть для просмотра' : 'Перейти к заполнению';
   return <Dialog open={open} onClose={onClose} overlayClassName="entry-setup-overlay" modalClassName="entry-setup-modal taiga-entry-setup"
-    title={<>Параметры <span className="accent">отчёта</span></>}
+    title="Выберите объект и дату отчёта"
     bodyClassName="entry-setup-body" footerClassName="entry-setup-foot" footer={<><button className="taiga-btn flat" onClick={onClose}>Отмена</button><button className="taiga-btn primary" disabled={!objectId || !reportDate || future || inaccessible || loading} onClick={proceed}>{actionText}</button></>}>
-      <p>Выберите объект и дату отчёта.</p>
-      <div className={`taiga-field ${inaccessible ? 'error' : ''}`}><span>Объект</span><ComboBox value={objectId} onChange={setObjectId} options={available.map((item) => ({ value: item.id, label: item.name }))} placeholder="Выберите объект" /></div>
-      <div className={`taiga-hint ${inaccessible ? 'error' : 'neutral'}`}>{!objectId ? 'Выберите объект' : inaccessible ? <>Объект не закреплён за вами. <button onClick={async () => { try { await api('/api/access-requests', { method: 'POST', body: JSON.stringify({ objectId: Number(objectId) }) }); notify?.('Запрос на доступ отправлен', 'success'); } catch (error) { notify?.(error.message, 'error'); } }}>Запросить доступ</button></> : 'Объект доступен для внесения данных.'}</div>
-      <div className={`taiga-field ${future ? 'error' : status?.lockedBy ? 'warning' : ''}`}><span>Дата отчёта</span><CalendarField value={reportDate} onChange={setReportDate} /></div>
-      <div className={`taiga-hint ${future ? 'error' : statusTone}`}>{dateHint}{(past || future) && <> <button onClick={() => setReportDate(today)}>Поставить сегодня</button></>}</div>
+      <div className={`taiga-field ${inaccessible ? 'error' : ''}`}><ComboBox value={objectId} onChange={setObjectId} options={available.map((item) => ({ value: item.id, label: item.name }))} placeholder="Выберите объект" /></div>
+      <div className={`taiga-field ${future ? 'error' : status?.lockedBy ? 'warning' : ''}`}><CalendarField value={reportDate} onChange={setReportDate} /></div>
     </Dialog>;
 }

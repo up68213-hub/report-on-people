@@ -643,9 +643,10 @@
     }
     #detail-table {
       width: 100%;
+      table-layout: fixed;
       border-collapse: collapse;
       font-size: 12px;
-      min-width: 700px;
+      min-width: 0;
     }
     #detail-table th {
       background: var(--surface-2);
@@ -654,7 +655,8 @@
       padding: 8px 10px;
       text-align: left;
       border-bottom: 2px solid var(--surface-3);
-      white-space: nowrap;
+      white-space: normal;
+      overflow-wrap: anywhere;
       font-size: 11px;
       text-transform: uppercase;
       letter-spacing: .3px;
@@ -690,6 +692,8 @@
       border-bottom: 1px solid var(--surface-3);
       vertical-align: middle;
       text-align: left;
+      white-space: normal;
+      overflow-wrap: anywhere;
     }
     /* одинаковые горизонтальные отступы у шапки и ячеек */
     #detail-table th,
@@ -697,6 +701,7 @@
       padding-left: 10px;
       padding-right: 10px;
     }
+    #detail-table .decision-badge,#detail-table .reason-texts button{max-width:100%;white-space:normal;overflow-wrap:anywhere;line-height:1.25}
     #detail-table tr:hover td {
       background: var(--surface-2);
     }

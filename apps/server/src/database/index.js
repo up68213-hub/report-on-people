@@ -64,6 +64,40 @@ db.exec('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON; PRAGMA busy_timeou
 const schemaPath = path.join(import.meta.dirname, 'schema.sql');
 db.exec(fs.readFileSync(schemaPath, 'utf8'));
 
+const managedDictionarySql = sqlite.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='managed_dictionary_values'").get()?.sql || '';
+if (managedDictionarySql && !managedDictionarySql.includes('resource_measure')) {
+  db.exec('PRAGMA foreign_keys = OFF; BEGIN IMMEDIATE;');
+  try {
+    db.exec(`
+      ALTER TABLE managed_dictionary_values RENAME TO managed_dictionary_values_old;
+      CREATE TABLE managed_dictionary_values (
+        dictionary_id INTEGER PRIMARY KEY,
+        category TEXT NOT NULL CHECK (category IN ('work_type','cause','decision','contractor','resource_measure')),
+        value TEXT NOT NULL,
+        is_active INTEGER NOT NULL DEFAULT 1 CHECK (is_active IN (0,1)),
+        created_by INTEGER NOT NULL,
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (created_by) REFERENCES users(user_id),
+        UNIQUE (category, value)
+      );
+      INSERT INTO managed_dictionary_values SELECT * FROM managed_dictionary_values_old;
+      DROP TABLE managed_dictionary_values_old;
+      COMMIT;
+      PRAGMA foreign_keys = ON;
+    `);
+  } catch (error) {
+    db.exec('ROLLBACK; PRAGMA foreign_keys = ON;');
+    throw error;
+  }
+}
+
+// Lightweight forward migrations for installations created before these columns existed.
+const qualityWorkColumns = new Set(db.prepare('PRAGMA table_info(resource_quality_work)').all().map((column) => column.name));
+if (!qualityWorkColumns.has('department_measure')) db.exec("ALTER TABLE resource_quality_work ADD COLUMN department_measure TEXT NOT NULL DEFAULT ''");
+if (!qualityWorkColumns.has('due_date')) db.exec('ALTER TABLE resource_quality_work ADD COLUMN due_date TEXT');
+if (!qualityWorkColumns.has('owner')) db.exec("ALTER TABLE resource_quality_work ADD COLUMN owner TEXT NOT NULL DEFAULT ''");
+
 const seedDevUsers = db.transaction(() => {
   const count = db.prepare('SELECT COUNT(*) AS count FROM users').get().count;
   if (count > 0) return;

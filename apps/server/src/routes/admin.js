@@ -4,7 +4,14 @@ import { CAUSES, DECISIONS, WORK_TYPES } from '../manual/manual-report.js';
 
 const ROLES = new Set(['administrator', 'project_manager', 'resource_manager', 'observer']);
 const OBJECT_ROLES = new Set(['project_manager', 'observer']);
-const DICTIONARY_CATEGORIES = new Set(['work_type', 'cause', 'decision', 'contractor']);
+const DICTIONARY_CATEGORIES = new Set(['work_type', 'cause', 'decision', 'contractor', 'resource_measure']);
+const RESOURCE_MEASURES = [
+  'Переговоры с подрядчиком', 'Уведомление со сроком вывода', 'Претензия',
+  'Удержание по договору', 'План корректирующих действий',
+  'Перераспределение с другого объекта', 'Инициирован тендер',
+  'Привлечён второй подрядчик', 'Ускорено оформление пропусков',
+  'Замена подрядчика', 'Вопрос вынесен на штаб', 'Мера не требуется',
+];
 
 function ensureDictionaryValues(userId) {
   const insert = db.prepare(`
@@ -14,6 +21,7 @@ function ensureDictionaryValues(userId) {
   WORK_TYPES.forEach((value) => insert.run('work_type', value, userId));
   CAUSES.forEach((value) => insert.run('cause', value, userId));
   DECISIONS.forEach((value) => insert.run('decision', value, userId));
+  RESOURCE_MEASURES.forEach((value) => insert.run('resource_measure', value, userId));
   db.prepare("SELECT DISTINCT contractor AS value FROM people_quality_records WHERE trim(contractor) <> ''").all()
     .forEach(({ value }) => insert.run('contractor', value, userId));
   db.prepare("SELECT category, value FROM manual_dictionary_values WHERE category IN ('work_type', 'cause')").all()
@@ -22,6 +30,8 @@ function ensureDictionaryValues(userId) {
 
 export async function adminRoutes(app) {
   const adminOnly = { preHandler: requireRole('administrator') };
+  const seedUser = db.prepare("SELECT user_id FROM users WHERE global_role='administrator' ORDER BY user_id LIMIT 1").get();
+  if (seedUser) ensureDictionaryValues(seedUser.user_id);
 
   app.get('/api/admin/users', adminOnly, async () => {
     const users = db.prepare(`

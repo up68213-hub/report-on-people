@@ -479,7 +479,7 @@ export default function App() {
       <div className="sidebar-brand sidebar-enko-brand"><img src="/enko-logo.png" alt="ЕНКО — строительный холдинг" /></div>
       <nav className="sidebar-nav" aria-label="Разделы приложения">
         <button className={activeSection === 'people' ? 'active' : ''} onClick={() => openSection('people')}><Icon name="summary" /><span>Отчёт по людям</span></button>
-        <button className={activeSection === 'resources' ? 'active' : ''} onClick={() => openSection('resources')}><Icon name="edit" /><span>Департамент ресурсов</span></button>
+        <button className={activeSection === 'resources' ? 'active' : ''} onClick={() => openSection('resources')}><Icon name="edit" /><span>Отработка подрядчиков</span></button>
         {session?.user.role === 'administrator' && <button className={activeSection === 'admin' ? 'active' : ''} onClick={() => openSection('admin')}><Icon name="admin" /><span>Администрирование</span></button>}
       </nav>
       <div className="sidebar-footer">{session?.authMode === 'dev' && <label className="sidebar-role-switch"><span>Тестовая роль</span><ComboBox value={session.user.id} onChange={setDevUserId} options={(session.devUsers || []).map((user) => ({ value: user.id, label: `${user.name} — ${roleNames[user.role]}` }))} /></label>}<div className="sidebar-user"><strong>{session?.user.name || 'Загрузка…'}</strong><span>{roleNames[session?.user.role] || ''}</span></div><button className="sidebar-theme" onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}><Icon name={theme === 'light' ? 'moon' : 'sun'} /><span>{theme === 'light' ? 'Тёмная тема' : 'Светлая тема'}</span></button></div>

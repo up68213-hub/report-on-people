@@ -150,7 +150,7 @@ ON object_access_requests(user_id, object_id) WHERE status = 'pending';
 
 CREATE TABLE IF NOT EXISTS managed_dictionary_values (
     dictionary_id       INTEGER PRIMARY KEY,
-    category            TEXT NOT NULL CHECK (category IN ('work_type', 'cause', 'decision', 'contractor')),
+    category            TEXT NOT NULL CHECK (category IN ('work_type', 'cause', 'decision', 'contractor', 'resource_measure')),
     value               TEXT NOT NULL,
     is_active           INTEGER NOT NULL DEFAULT 1 CHECK (is_active IN (0, 1)),
     created_by          INTEGER NOT NULL,
@@ -184,6 +184,9 @@ CREATE TABLE IF NOT EXISTS resource_quality_work (
     detail              TEXT NOT NULL DEFAULT '',
     contractor          TEXT NOT NULL DEFAULT '',
     is_resolved         INTEGER NOT NULL DEFAULT 0 CHECK (is_resolved IN (0, 1)),
+    department_measure  TEXT NOT NULL DEFAULT '',
+    due_date            TEXT,
+    owner               TEXT NOT NULL DEFAULT '',
     comment             TEXT NOT NULL DEFAULT '',
     updated_by          INTEGER NOT NULL,
     created_at          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
