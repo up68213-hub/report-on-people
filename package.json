@@ -7,6 +7,7 @@
     "dev": "concurrently -n server,web -c blue,cyan \"npm:dev -w @people-report/server\" \"npm:dev -w @people-report/web\"",
     "build": "npm run build -w @people-report/web",
     "start": "npm run start -w @people-report/server",
+    "backup": "node scripts/backup-database.mjs",
     "test": "npm run test -w @people-report/server && npm run test -w @people-report/web"
   },
   "devDependencies": {

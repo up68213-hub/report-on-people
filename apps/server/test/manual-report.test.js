@@ -34,3 +34,10 @@ test('rejects duplicate business keys in one manual report', () => {
   const errors = validateManualReport({ reportDate: '2026-08-31', rows: [row, { ...row }] });
   assert.equal(errors.at(-1).message, 'Строка с таким видом работы, детализацией и подрядчиком уже есть.');
 });
+
+test('rejects impossible ISO dates and a missing contractor on the server', () => {
+  const row = { workType: 'Отделка', planPeople: 1, actualPeople: 1 };
+  const errors = validateManualReport({ reportDate: '2026-02-31', rows: [row] });
+  assert.ok(errors.some((error) => error.field === 'reportDate'));
+  assert.ok(errors.some((error) => error.field === 'contractor'));
+});

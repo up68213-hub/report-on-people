@@ -12,6 +12,7 @@ export const config = {
   port: Number(process.env.PORT || 3000),
   authMode: process.env.AUTH_MODE || 'dev',
   devUserId: Number(process.env.DEV_USER_ID || 1),
+  reportToday: process.env.REPORT_TODAY || '',
   databasePath: resolveFromRoot(process.env.DATABASE_PATH, 'data/report.sqlite'),
   webDistPath: path.resolve(root, 'apps/web/dist'),
   bitrix: {

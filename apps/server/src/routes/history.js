@@ -5,8 +5,12 @@ const RECORD_COLUMNS = [
   'report_date', 'work_type', 'detail', 'contractor', 'quality_score',
   'plan_people', 'actual_people', 'cause', 'decision', 'work_quality_fact',
   'discipline_fact', 'people_count_fact', 'productivity_fact',
-  'cleanliness_fact', 'source_import_id', 'source_sheet', 'source_row',
+  'cleanliness_fact', 'work_quality_score', 'discipline_score', 'people_count_score',
+  'productivity_score', 'cleanliness_score', 'source_import_id', 'source_sheet', 'source_row',
 ];
+
+const PLAN_COLUMNS = ['object_id', 'work_type', 'detail', 'contractor', 'plan_people', 'sort_order',
+  'is_active', 'created_by', 'source_import_id'];
 
 function placeholders(items) {
   return items.map(() => '?').join(', ');
@@ -26,8 +30,12 @@ function revertEntry(entryId, userId) {
   }
 
   const changes = db.prepare('SELECT * FROM import_changes WHERE import_id = ? ORDER BY change_id DESC').all(entryId);
+  const planChanges = db.prepare('SELECT * FROM plan_changes WHERE import_id = ? ORDER BY change_id DESC').all(entryId);
   const hasConflict = changes.some((change) => {
     const current = db.prepare('SELECT source_import_id FROM people_quality_records WHERE record_id = ?').get(change.record_id);
+    return !current || current.source_import_id !== entryId;
+  }) || planChanges.some((change) => {
+    const current = db.prepare('SELECT source_import_id FROM manual_plan_rows WHERE plan_row_id=?').get(change.plan_row_id);
     return !current || current.source_import_id !== entryId;
   });
   if (hasConflict) {
@@ -54,13 +62,23 @@ function revertEntry(entryId, userId) {
         ...Object.fromEntries(RECORD_COLUMNS.map((column) => [column, previous[column] ?? null])),
       });
     }
+    for (const change of planChanges) {
+      if (change.change_type === 'insert') {
+        db.prepare('DELETE FROM manual_plan_rows WHERE plan_row_id=?').run(change.plan_row_id);
+        continue;
+      }
+      const previous = JSON.parse(change.previous_data_json);
+      db.prepare(`UPDATE manual_plan_rows SET ${PLAN_COLUMNS.map((column) => `${column}=@${column}`).join(',')},updated_at=CURRENT_TIMESTAMP
+        WHERE plan_row_id=@plan_row_id`).run({ plan_row_id: change.plan_row_id,
+        ...Object.fromEntries(PLAN_COLUMNS.map((column) => [column, previous[column] ?? null])) });
+    }
     db.prepare(`
       UPDATE imports SET status = 'reverted', reverted_at = CURRENT_TIMESTAMP, reverted_by = ?
       WHERE import_id = ?
     `).run(userId, entryId);
   })();
 
-  return { entryId, reverted: true, affectedRecords: changes.length };
+  return { entryId, reverted: true, affectedRecords: changes.length, affectedPlanRows: planChanges.length };
 }
 
 export async function historyRoutes(app) {
@@ -83,6 +101,9 @@ export async function historyRoutes(app) {
           LEFT JOIN people_quality_records r ON r.record_id = c.record_id
           WHERE c.import_id = i.import_id
             AND (r.record_id IS NULL OR r.source_import_id <> i.import_id)
+        ) OR EXISTS (
+          SELECT 1 FROM plan_changes pc LEFT JOIN manual_plan_rows p ON p.plan_row_id=pc.plan_row_id
+          WHERE pc.import_id=i.import_id AND (p.plan_row_id IS NULL OR p.source_import_id<>i.import_id)
         ) THEN 0 ELSE 1 END AS canRevert
       FROM imports i
       LEFT JOIN objects o ON o.object_id = i.object_id

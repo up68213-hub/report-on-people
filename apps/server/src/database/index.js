@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { config } from '../config.js';
+import { runMigrations } from './migrations.js';
 
 fs.mkdirSync(path.dirname(config.databasePath), { recursive: true });
 
@@ -124,6 +125,8 @@ if (config.authMode === 'dev') {
     WHERE u.global_role = 'project_manager' AND o.is_active = 1
   `).run();
 }
+
+runMigrations(db, sqlite, config.databasePath);
 
 export function closeDatabase() {
   db.close();

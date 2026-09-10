@@ -24,8 +24,6 @@ function ensureDictionaryValues(userId) {
   RESOURCE_MEASURES.forEach((value) => insert.run('resource_measure', value, userId));
   db.prepare("SELECT DISTINCT contractor AS value FROM people_quality_records WHERE trim(contractor) <> ''").all()
     .forEach(({ value }) => insert.run('contractor', value, userId));
-  db.prepare("SELECT category, value FROM manual_dictionary_values WHERE category IN ('work_type', 'cause')").all()
-    .forEach(({ category, value }) => insert.run(category, value, userId));
 }
 
 export async function adminRoutes(app) {

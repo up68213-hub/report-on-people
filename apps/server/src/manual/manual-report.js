@@ -81,7 +81,20 @@ function isOwnForces(row) {
 }
 
 export function isFriday(date) {
-  return /^\d{4}-\d{2}-\d{2}$/.test(date || '') && new Date(`${date}T00:00:00Z`).getUTCDay() === 5;
+  return isIsoDate(date) && new Date(`${date}T00:00:00Z`).getUTCDay() === 5;
+}
+
+export function isIsoDate(value) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value || '')) return false;
+  const parsed = new Date(`${value}T00:00:00Z`);
+  return !Number.isNaN(parsed.valueOf()) && parsed.toISOString().slice(0, 10) === value;
+}
+
+export function qualityScores(row) {
+  return Object.fromEntries(QUALITY_CRITERIA.map((criterion) => {
+    const value = String(row[criterion.key] || '').trim();
+    return [`${criterion.field.replace(/_fact$/, '')}_score`, criterion.options.find(([, text]) => text === value)?.[0] ?? null];
+  }));
 }
 
 export function qualityScore(row) {
@@ -100,11 +113,12 @@ export function qualityScore(row) {
 
 export function validateManualReport({ reportDate, rows, weeklyFacts = {} }) {
   const errors = [];
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(reportDate || '') || Number.isNaN(new Date(`${reportDate}T00:00:00Z`).valueOf())) {
+  if (!isIsoDate(reportDate)) {
     errors.push({ row: null, field: 'reportDate', message: 'Укажите корректную дату отчёта.' });
   }
   rows.forEach((row, index) => {
     const number = index + 1;
+    if (!String(row.contractor || '').trim()) errors.push({ row: number, field: 'contractor', message: 'Выберите подрядчика.' });
     if (!String(row.workType || '').trim()) errors.push({ row: number, field: 'workType', message: 'Выберите вид работы.' });
     if (String(row.detail || '').length > 30) errors.push({ row: number, field: 'detail', message: 'Детализация — не более 30 символов.' });
     if (String(row.contractor || '').length > 30) errors.push({ row: number, field: 'contractor', message: 'Подрядчик — не более 30 символов.' });

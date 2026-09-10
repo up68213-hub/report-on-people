@@ -11,7 +11,8 @@ import { adminRoutes } from './routes/admin.js';
 import { manualRoutes } from './routes/manual.js';
 import { feedbackRoutes } from './routes/feedback.js';
 
-const app = Fastify({ logger: true });
+export async function buildApp(options = {}) {
+const app = Fastify({ logger: options.logger ?? true });
 
 await app.register(cors, {
   origin: config.authMode === 'dev' ? true : false,
@@ -51,4 +52,10 @@ if (fs.existsSync(config.webDistPath)) {
   });
 }
 
-await app.listen({ host: config.host, port: config.port });
+return app;
+}
+
+if (process.env.NODE_ENV !== 'test') {
+  const app = await buildApp();
+  await app.listen({ host: config.host, port: config.port });
+}

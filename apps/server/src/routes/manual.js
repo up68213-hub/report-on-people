@@ -1,8 +1,9 @@
 import crypto from 'node:crypto';
 import { db } from '../database/index.js';
+import { config } from '../config.js';
 import { canEditObject, requireRole } from '../auth/index.js';
 import {
-  CAUSES, DECISIONS, QUALITY_CRITERIA, WORK_TYPES, isFriday, qualityScore, validateManualReport,
+  CAUSES, DECISIONS, QUALITY_CRITERIA, WORK_TYPES, isFriday, isIsoDate, qualityScore, qualityScores, validateManualReport,
 } from '../manual/manual-report.js';
 
 function normalized(value) {
@@ -10,6 +11,7 @@ function normalized(value) {
 }
 
 function todayLocal() {
+  if (config.reportToday) return config.reportToday;
   const date = new Date();
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
@@ -27,7 +29,6 @@ function assertAccess(request, reply, objectId) {
 }
 
 function catalogs() {
-  const custom = db.prepare('SELECT category, value FROM manual_dictionary_values ORDER BY value').all();
   const managedAll = db.prepare('SELECT category, value, is_active AS isActive FROM managed_dictionary_values ORDER BY value').all();
   const managed = managedAll.filter((item) => item.isActive);
   const recordWorks = db.prepare("SELECT DISTINCT work_type AS value FROM people_quality_records WHERE trim(work_type) <> ''").all();
@@ -36,8 +37,8 @@ function catalogs() {
   const recordDecisions = db.prepare("SELECT DISTINCT decision AS value FROM people_quality_records WHERE trim(coalesce(decision, '')) <> ''").all();
   const unique = (values) => [...new Set(values.filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ru'));
   return {
-    workTypes: unique(managedAll.some((x) => x.category === 'work_type') ? managed.filter((x) => x.category === 'work_type').map((x) => x.value) : [...WORK_TYPES, ...recordWorks.map((x) => x.value), ...custom.filter((x) => x.category === 'work_type').map((x) => x.value)]),
-    causes: unique(managedAll.some((x) => x.category === 'cause') ? managed.filter((x) => x.category === 'cause').map((x) => x.value) : [...CAUSES, ...recordCauses.map((x) => x.value), ...custom.filter((x) => x.category === 'cause').map((x) => x.value)]),
+    workTypes: unique(managedAll.some((x) => x.category === 'work_type') ? managed.filter((x) => x.category === 'work_type').map((x) => x.value) : [...WORK_TYPES, ...recordWorks.map((x) => x.value)]),
+    causes: unique(managedAll.some((x) => x.category === 'cause') ? managed.filter((x) => x.category === 'cause').map((x) => x.value) : [...CAUSES, ...recordCauses.map((x) => x.value)]),
     decisions: unique(managedAll.some((x) => x.category === 'decision') ? managed.filter((x) => x.category === 'decision').map((x) => x.value) : [...DECISIONS, ...recordDecisions.map((x) => x.value)]),
     contractors: unique(managedAll.some((x) => x.category === 'contractor') ? managed.filter((x) => x.category === 'contractor').map((x) => x.value) : recordContractors.map((x) => x.value)),
     qualityCriteria: QUALITY_CRITERIA.map(({ key, title, options }) => ({ key, title, options: options.map(([, text]) => text) })),
@@ -104,6 +105,115 @@ function weeklyContractors(objectId, reportDate) {
   `).all(objectId, start, end);
 }
 
+function persistManualReport({ objectId, reportDate, rows, submitted, weeklyQuality, removedPlanRowIds, weekStart, userId }) {
+  return db.transaction(() => {
+    const createdImport = db.prepare(`INSERT INTO imports (object_id, uploaded_by, original_name, sha256)
+      VALUES (?, ?, ?, ?)`).run(objectId, userId, `Ручной отчёт за ${reportDate}`, `manual:${crypto.randomUUID()}`);
+    const importId = Number(createdImport.lastInsertRowid);
+    const recordAudit = new Map();
+    const planAudit = new Map();
+    const rememberRecord = (record, type = 'update') => {
+      if (!recordAudit.has(record.record_id)) recordAudit.set(record.record_id, { type, previous: type === 'insert' ? null : record });
+    };
+    const rememberPlan = (plan, type) => {
+      if (!planAudit.has(plan.plan_row_id)) planAudit.set(plan.plan_row_id, { type, previous: type === 'insert' ? null : plan });
+    };
+    const planById = db.prepare('SELECT * FROM manual_plan_rows WHERE plan_row_id=? AND object_id=?');
+    const planByKey = db.prepare('SELECT * FROM manual_plan_rows WHERE object_id=? AND work_type=? AND detail=? AND contractor=?');
+    const dictionary = db.prepare(`INSERT INTO managed_dictionary_values(category,value,created_by) VALUES(?,?,?)
+      ON CONFLICT(category,value) DO UPDATE SET is_active=1,updated_at=CURRENT_TIMESTAMP`);
+
+    for (const planRowId of removedPlanRowIds) {
+      const previous = planById.get(planRowId, objectId);
+      if (!previous) continue;
+      rememberPlan(previous, 'deactivate');
+      db.prepare(`UPDATE manual_plan_rows SET is_active=0,source_import_id=?,updated_at=CURRENT_TIMESTAMP
+        WHERE plan_row_id=? AND object_id=?`).run(importId, planRowId, objectId);
+    }
+    rows.forEach((row, index) => {
+      const workType = String(row.workType || '').trim();
+      const detail = String(row.detail || '').trim();
+      const contractor = String(row.contractor || '').trim();
+      const cause = String(row.cause || '').trim();
+      const decision = String(row.decision || '').trim();
+      for (const [category, value] of [['work_type', workType], ['contractor', contractor], ['cause', cause], ['decision', decision]]) {
+        if (value) dictionary.run(category, value, userId);
+      }
+      let previous = Number(row.id) > 0 ? planById.get(Number(row.id), objectId) : planByKey.get(objectId, workType, detail, contractor);
+      if (previous) {
+        rememberPlan(previous, 'update');
+        db.prepare(`UPDATE manual_plan_rows SET work_type=?,detail=?,contractor=?,plan_people=?,sort_order=?,is_active=1,
+          source_import_id=?,updated_at=CURRENT_TIMESTAMP WHERE plan_row_id=? AND object_id=?`)
+          .run(workType, detail, contractor, Number(row.planPeople || 0), index, importId, previous.plan_row_id, objectId);
+      } else {
+        const result = db.prepare(`INSERT INTO manual_plan_rows(object_id,work_type,detail,contractor,plan_people,sort_order,created_by,source_import_id)
+          VALUES(?,?,?,?,?,?,?,?)`).run(objectId, workType, detail, contractor, Number(row.planPeople || 0), index, userId, importId);
+        previous = planById.get(Number(result.lastInsertRowid), objectId);
+        rememberPlan(previous, 'insert');
+      }
+    });
+
+    let inserted = 0;
+    let updated = 0;
+    for (const [index, row] of submitted.entries()) {
+      const workType = String(row.workType || '').trim();
+      const detail = String(row.detail || '').trim();
+      const contractor = String(row.contractor || '').trim();
+      const current = db.prepare(`SELECT * FROM people_quality_records WHERE object_id=? AND report_date=? AND work_type=? AND detail=? AND contractor=?`)
+        .get(objectId, reportDate, workType, detail, contractor);
+      const criteria = Object.fromEntries(QUALITY_CRITERIA.map((item) => [item.field, String(row[item.key] || '').trim() || null]));
+      const payload = { report_date: reportDate, work_type: workType, detail, contractor,
+        quality_score: qualityScore(row), ...qualityScores(row), plan_people: Number(row.planPeople || 0), actual_people: Number(row.actualPeople),
+        cause: String(row.cause || '').trim() || null, decision: String(row.decision || '').trim() || null,
+        ...criteria, source_import_id: importId, source_sheet: 'Ручной ввод', source_row: index + 1 };
+      const columns = Object.keys(payload);
+      if (current) {
+        rememberRecord(current);
+        db.prepare(`UPDATE people_quality_records SET ${columns.map((key) => `${key}=@${key}`).join(',')},updated_at=CURRENT_TIMESTAMP WHERE record_id=@record_id`)
+          .run({ record_id: current.record_id, ...payload });
+        updated += 1;
+      } else {
+        const result = db.prepare(`INSERT INTO people_quality_records(object_id,${columns.join(',')}) VALUES(@object_id,${columns.map((key) => `@${key}`).join(',')})`)
+          .run({ object_id: objectId, ...payload });
+        rememberRecord({ record_id: Number(result.lastInsertRowid) }, 'insert');
+        inserted += 1;
+      }
+    }
+
+    for (const rating of weeklyQuality) {
+      const values = Object.fromEntries(QUALITY_CRITERIA.map((item) => [item.key, String(rating[item.key] || '').trim()]));
+      if (QUALITY_CRITERIA.some((item) => !values[item.key])) continue;
+      const contractor = normalized(rating.contractor);
+      const workType = normalized(rating.workType);
+      const affected = db.prepare(`SELECT * FROM people_quality_records WHERE object_id=? AND report_date BETWEEN ? AND ?
+        AND lower(trim(contractor))=? AND lower(trim(work_type))=?`).all(objectId, weekStart, reportDate, contractor, workType);
+      affected.forEach((record) => rememberRecord(record));
+      const textScores = Object.fromEntries(QUALITY_CRITERIA.map((item) => [item.field, values[item.key]]));
+      const numericScores = qualityScores(values);
+      db.prepare(`UPDATE people_quality_records SET quality_score=@quality_score,
+        work_quality_fact=@work_quality_fact,discipline_fact=@discipline_fact,people_count_fact=@people_count_fact,
+        productivity_fact=@productivity_fact,cleanliness_fact=@cleanliness_fact,
+        work_quality_score=@work_quality_score,discipline_score=@discipline_score,people_count_score=@people_count_score,
+        productivity_score=@productivity_score,cleanliness_score=@cleanliness_score,
+        source_import_id=@source_import_id,updated_at=CURRENT_TIMESTAMP WHERE object_id=@object_id AND report_date BETWEEN @week_start AND @report_date
+        AND lower(trim(contractor))=@contractor AND lower(trim(work_type))=@work_type`)
+        .run({ object_id: objectId, week_start: weekStart, report_date: reportDate, contractor, work_type: workType,
+          quality_score: qualityScore(values), source_import_id: importId, ...textScores, ...numericScores });
+    }
+
+    const recordNow = db.prepare('SELECT * FROM people_quality_records WHERE record_id=?');
+    const addRecordAudit = db.prepare(`INSERT INTO import_changes(import_id,record_id,change_type,previous_data_json,new_data_json) VALUES(?,?,?,?,?)`);
+    for (const [recordId, audit] of recordAudit) addRecordAudit.run(importId, recordId, audit.type,
+      audit.previous ? JSON.stringify(audit.previous) : null, JSON.stringify(recordNow.get(recordId)));
+    const planNow = db.prepare('SELECT * FROM manual_plan_rows WHERE plan_row_id=?');
+    const addPlanAudit = db.prepare(`INSERT INTO plan_changes(import_id,plan_row_id,change_type,previous_data_json,new_data_json) VALUES(?,?,?,?,?)`);
+    for (const [planRowId, audit] of planAudit) addPlanAudit.run(importId, planRowId, audit.type,
+      audit.previous ? JSON.stringify(audit.previous) : null, JSON.stringify(planNow.get(planRowId)));
+    db.prepare(`UPDATE imports SET status='completed',inserted_count=?,updated_count=? WHERE import_id=?`).run(inserted, updated, importId);
+    return { saved: submitted.length, inserted, updated, importId };
+  })();
+}
+
 export async function manualRoutes(app) {
   app.get('/api/manual/status', {
     preHandler: requireRole('administrator', 'project_manager'),
@@ -111,6 +221,7 @@ export async function manualRoutes(app) {
     const objectId = Number(request.query.objectId);
     if (!assertAccess(request, reply, objectId)) return;
     const reportDate = String(request.query.reportDate || '');
+    if (!isIsoDate(reportDate)) return reply.code(400).send({ error: 'INVALID_DATE', message: 'Укажите корректную дату отчёта.' });
     const stats = db.prepare(`SELECT COUNT(*) AS total, SUM(CASE WHEN actual_people IS NOT NULL THEN 1 ELSE 0 END) AS filled,
       MAX(updated_at) AS updatedAt FROM people_quality_records WHERE object_id = ? AND report_date = ?`).get(objectId, reportDate);
     const author = db.prepare(`SELECT u.display_name AS name FROM imports i JOIN users u ON u.user_id = i.uploaded_by
@@ -126,6 +237,7 @@ export async function manualRoutes(app) {
   app.post('/api/manual/lock', { preHandler: requireRole('administrator', 'project_manager') }, async (request, reply) => {
     const objectId = Number(request.body?.objectId); if (!assertAccess(request, reply, objectId)) return;
     const reportDate = String(request.body?.reportDate || '');
+    if (!isIsoDate(reportDate)) return reply.code(400).send({ error: 'INVALID_DATE', message: 'Укажите корректную дату отчёта.' });
     if (reportDate !== todayLocal()) return reply.code(403).send({ error: 'DATE_CLOSED', message: 'Редактировать можно только текущий день.' });
     db.prepare('DELETE FROM report_edit_locks WHERE expires_at <= CURRENT_TIMESTAMP').run();
     const current = db.prepare('SELECT l.user_id AS userId, u.display_name AS author FROM report_edit_locks l JOIN users u ON u.user_id=l.user_id WHERE object_id = ? AND report_date = ?').get(objectId, reportDate);
@@ -149,6 +261,7 @@ export async function manualRoutes(app) {
     const objectId = Number(request.query.objectId);
     if (!assertAccess(request, reply, objectId)) return;
     const reportDate = String(request.query.reportDate || '');
+    if (!isIsoDate(reportDate)) return reply.code(400).send({ error: 'INVALID_DATE', message: 'Укажите корректную дату отчёта.' });
     return { rows: planRows(objectId, reportDate), weeklyContractors: weeklyContractors(objectId, reportDate), ...catalogs() };
   });
 
@@ -158,6 +271,7 @@ export async function manualRoutes(app) {
     const objectId = Number(request.body?.objectId);
     if (!assertAccess(request, reply, objectId)) return;
     const reportDate = String(request.body?.reportDate || '');
+    if (!isIsoDate(reportDate)) return reply.code(400).send({ error: 'INVALID_DATE', message: 'Укажите корректную дату отчёта.' });
     if (reportDate !== todayLocal()) {
       return reply.code(403).send({ error: 'HISTORICAL_EDIT_FORBIDDEN', message: 'Можно вносить и исправлять данные только за сегодняшний день.' });
     }
@@ -196,11 +310,9 @@ export async function manualRoutes(app) {
     if (errors.length) return reply.code(422).send({ error: 'VALIDATION_FAILED', message: errors[0].message, errors });
 
     const submitted = rows.filter((row) => row.actualPeople !== null && row.actualPeople !== '');
-    const save = db.transaction(() => {
-      const saveDictionary = db.prepare(`
-        INSERT INTO manual_dictionary_values (category, value, created_by)
-        VALUES (?, ?, ?) ON CONFLICT(category, value) DO NOTHING
-      `);
+    const legacySave = db.transaction(() => {
+      const saveDictionary = db.prepare(`INSERT INTO managed_dictionary_values (category, value, created_by)
+        VALUES (?, ?, ?) ON CONFLICT(category, value) DO UPDATE SET is_active=1, updated_at=CURRENT_TIMESTAMP`);
       const savePlan = db.prepare(`
         INSERT INTO manual_plan_rows (
           object_id, work_type, detail, contractor, plan_people, sort_order, created_by
@@ -239,6 +351,9 @@ export async function manualRoutes(app) {
         if (cause) saveDictionary.run('cause', cause, request.currentUser.id);
         const detail = String(row.detail || '').trim();
         const contractor = String(row.contractor || '').trim();
+        const decision = String(row.decision || '').trim();
+        if (contractor) saveDictionary.run('contractor', contractor, request.currentUser.id);
+        if (decision) saveDictionary.run('decision', decision, request.currentUser.id);
         if (Number.isInteger(Number(row.id)) && Number(row.id) > 0) updatePlan.run(workType, detail, contractor, Number(row.planPeople || 0), index, Number(row.id), objectId);
         else savePlan.run(objectId, workType, detail, contractor, Number(row.planPeople || 0), index, request.currentUser.id);
       });
@@ -310,7 +425,9 @@ export async function manualRoutes(app) {
       return { saved: submitted.length, inserted, updated, importId };
     });
 
-    const result = save();
+    void legacySave;
+    const result = persistManualReport({ objectId, reportDate, rows, submitted, weeklyQuality,
+      removedPlanRowIds, weekStart, userId: request.currentUser.id });
     db.prepare('DELETE FROM report_edit_locks WHERE object_id = ? AND report_date = ? AND user_id = ?').run(objectId, reportDate, request.currentUser.id);
     return reply.code(201).send(result);
   });

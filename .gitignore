@@ -1,6 +1,7 @@
 node_modules/
 dist/
 data/*.sqlite*
+data/backups/
 storage/
 .env
 *.log

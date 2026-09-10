@@ -1,6 +1,6 @@
 import { db } from '../database/index.js';
 import { canViewObject, requireRole } from '../auth/index.js';
-import { QUALITY_CRITERIA } from '../manual/manual-report.js';
+import { QUALITY_CRITERIA, isIsoDate } from '../manual/manual-report.js';
 
 function scoreForCriterion(field, value) {
   const criterion = QUALITY_CRITERIA.find((item) => item.field === field);
@@ -29,11 +29,29 @@ function validate(request, reply, data) {
     reply.code(403).send({ error: 'FORBIDDEN', message: 'Нет доступа к выбранному объекту.' });
     return false;
   }
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(data.reportDate) || !data.workType) {
+  if (!isIsoDate(data.reportDate) || !data.workType) {
     reply.code(400).send({ error: 'VALIDATION', message: 'Выберите детализацию отчёта.' });
     return false;
   }
   return true;
+}
+
+function resolveRecord(data) {
+  return db.prepare(`SELECT record_id FROM people_quality_records
+    WHERE object_id=? AND report_date=? AND work_type=? AND detail=? AND contractor=?`)
+    .get(data.objectId, data.reportDate, data.workType, data.detail, data.contractor)?.record_id;
+}
+
+function saveQualityWork(item, userId) {
+  const existing = db.prepare('SELECT quality_work_id FROM resource_quality_work WHERE record_id=?').get(item.recordId);
+  if (existing) {
+    db.prepare(`UPDATE resource_quality_work SET is_resolved=?,department_measure=?,due_date=?,owner=?,comment=?,updated_by=?,updated_at=CURRENT_TIMESTAMP
+      WHERE record_id=?`).run(item.isResolved, item.measure, item.dueDate, item.owner, item.comment, userId, item.recordId);
+  } else {
+    db.prepare(`INSERT INTO resource_quality_work(record_id,object_id,report_date,work_type,detail,contractor,is_resolved,department_measure,due_date,owner,comment,updated_by)
+      VALUES(?,?,?,?,?,?,?,?,?,?,?,?)`).run(item.recordId, item.objectId, item.reportDate, item.workType, item.detail,
+      item.contractor, item.isResolved, item.measure, item.dueDate, item.owner, item.comment, userId);
+  }
 }
 
 export async function feedbackRoutes(app) {
@@ -64,8 +82,7 @@ export async function feedbackRoutes(app) {
         q.updated_at AS updatedAt, u.display_name AS updatedBy
       FROM people_quality_records r
       JOIN objects o ON o.object_id=r.object_id
-      LEFT JOIN resource_quality_work q ON q.object_id=r.object_id AND q.report_date=r.report_date
-        AND q.work_type=r.work_type AND q.detail=r.detail AND q.contractor=r.contractor
+      LEFT JOIN resource_quality_work q ON q.record_id=r.record_id
       LEFT JOIN users u ON u.user_id=q.updated_by
       WHERE r.object_id IN (${marks})
         AND lower(trim(r.work_type)) NOT IN ('собственные силы', 'собственный силы')
@@ -90,7 +107,7 @@ export async function feedbackRoutes(app) {
     if (!Number.isInteger(objectId) || !canViewObject(request.currentUser, objectId)) {
       return reply.code(403).send({ error: 'FORBIDDEN', message: 'Нет доступа к выбранному объекту.' });
     }
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(reportDate)) {
+    if (!isIsoDate(reportDate)) {
       return reply.code(400).send({ error: 'VALIDATION', message: 'Выберите дату отчёта.' });
     }
     const comments = db.prepare(`
@@ -145,22 +162,14 @@ export async function feedbackRoutes(app) {
       const measure = String(source?.measure || '').trim();
       const owner = String(source?.owner || '').trim();
       const dueDate = String(source?.dueDate || '').trim() || null;
-      if (comment.length > 2000 || measure.length > 500 || owner.length > 300 || (dueDate && !/^\d{4}-\d{2}-\d{2}$/.test(dueDate))) {
+      if (comment.length > 2000 || measure.length > 500 || owner.length > 300 || (dueDate && !isIsoDate(dueDate))) {
         return reply.code(400).send({ error: 'VALIDATION', message: 'Некорректные данные отработки подрядчика.' });
       }
-      prepared.push({ ...data, comment, measure, owner, dueDate, isResolved: Number(Boolean(source?.isResolved)) });
+      const recordId = resolveRecord(data);
+      if (!recordId) return reply.code(404).send({ error: 'RECORD_NOT_FOUND', message: 'Исходная строка отчёта не найдена.' });
+      prepared.push({ ...data, recordId, comment, measure, owner, dueDate, isResolved: Number(Boolean(source?.isResolved)) });
     }
-    const save = db.prepare(`
-      INSERT INTO resource_quality_work (object_id, report_date, work_type, detail, contractor, is_resolved, department_measure, due_date, owner, comment, updated_by)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      ON CONFLICT(object_id, report_date, work_type, detail, contractor) DO UPDATE SET
-        is_resolved = excluded.is_resolved, department_measure = excluded.department_measure,
-        due_date = excluded.due_date, owner = excluded.owner, comment = excluded.comment,
-        updated_by = excluded.updated_by, updated_at = CURRENT_TIMESTAMP
-    `);
-    db.transaction((items) => items.forEach((item) => save.run(item.objectId, item.reportDate, item.workType,
-      item.detail, item.contractor, item.isResolved, item.measure, item.dueDate, item.owner, item.comment,
-      request.currentUser.id)))(prepared);
+    db.transaction((items) => items.forEach((item) => saveQualityWork(item, request.currentUser.id)))(prepared);
     return { saved: true, count: prepared.length };
   });
 
@@ -173,18 +182,12 @@ export async function feedbackRoutes(app) {
     const dueDate = String(request.body?.dueDate || '').trim() || null;
     const isResolved = Number(Boolean(request.body?.isResolved));
     if (comment.length > 2000) return reply.code(400).send({ error: 'VALIDATION', message: 'Комментарий не должен превышать 2000 символов.' });
-    if (measure.length > 500 || owner.length > 300 || (dueDate && !/^\d{4}-\d{2}-\d{2}$/.test(dueDate))) {
+    if (measure.length > 500 || owner.length > 300 || (dueDate && !isIsoDate(dueDate))) {
       return reply.code(400).send({ error: 'VALIDATION', message: 'Некорректные данные отработки отклонения.' });
     }
-    db.prepare(`
-      INSERT INTO resource_quality_work (object_id, report_date, work_type, detail, contractor, is_resolved, department_measure, due_date, owner, comment, updated_by)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      ON CONFLICT(object_id, report_date, work_type, detail, contractor) DO UPDATE SET
-        is_resolved = excluded.is_resolved, department_measure = excluded.department_measure,
-        due_date = excluded.due_date, owner = excluded.owner, comment = excluded.comment,
-        updated_by = excluded.updated_by, updated_at = CURRENT_TIMESTAMP
-    `).run(data.objectId, data.reportDate, data.workType, data.detail, data.contractor,
-      isResolved, measure, dueDate, owner, comment, request.currentUser.id);
+    const recordId = resolveRecord(data);
+    if (!recordId) return reply.code(404).send({ error: 'RECORD_NOT_FOUND', message: 'Исходная строка отчёта не найдена.' });
+    saveQualityWork({ ...data, recordId, isResolved, measure, dueDate, owner, comment }, request.currentUser.id);
     return { saved: true };
   });
 }

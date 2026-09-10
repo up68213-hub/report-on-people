@@ -30,7 +30,15 @@
 
 ```plantuml
 @startuml C4_Context
-!includeurl https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+!define Person(alias,label,descr) actor "label\\n--\\ndescr" as alias
+!define System(alias,label,descr) rectangle "label\\n--\\ndescr" as alias
+!define System_Ext(alias,label,descr) cloud "label\\n--\\ndescr" as alias
+!define Container(alias,label,tech,descr) rectangle "label\\n[tech]\\n--\\ndescr" as alias
+!define ContainerDb(alias,label,tech,descr) database "label\\n[tech]\\n--\\ndescr" as alias
+!define Component(alias,label,tech,descr) component "label\\n[tech]\\n--\\ndescr" as alias
+!define System_Boundary(alias,label) rectangle "label" as alias
+!define Container_Boundary(alias,label) rectangle "label" as alias
+!define Rel(a,b,label,tech) a --> b : label\\n[tech]
 
 title Система «Отчёт по людям» — System Context
 
@@ -53,7 +61,15 @@ Rel(bitrix, report, "Передаёт контекст пользователя"
 
 ```plantuml
 @startuml C4_Container
-!includeurl https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+!define Person(alias,label,descr) actor "label\\n--\\ndescr" as alias
+!define System(alias,label,descr) rectangle "label\\n--\\ndescr" as alias
+!define System_Ext(alias,label,descr) cloud "label\\n--\\ndescr" as alias
+!define Container(alias,label,tech,descr) rectangle "label\\n[tech]\\n--\\ndescr" as alias
+!define ContainerDb(alias,label,tech,descr) database "label\\n[tech]\\n--\\ndescr" as alias
+!define Component(alias,label,tech,descr) component "label\\n[tech]\\n--\\ndescr" as alias
+!define System_Boundary(alias,label) rectangle "label" as alias
+!define Container_Boundary(alias,label) rectangle "label" as alias
+!define Rel(a,b,label,tech) a --> b : label\\n[tech]
 
 title Система «Отчёт по людям» — Container Diagram
 
@@ -70,8 +86,8 @@ System_Ext(bitrix, "Bitrix24", "Планируемая production-аутенти
 
 Rel(user, web, "Работает", "Browser")
 Rel(web, api, "Читает и сохраняет", "REST/JSON, same-origin")
-Rel(web, draft, "Автосохраняет/восстанавливает")
-Rel(api, db, "SQL, транзакции")
+Rel(web, draft, "Автосохраняет/восстанавливает", "localStorage")
+Rel(api, db, "SQL, транзакции", "node:sqlite")
 Rel(bitrix, api, "Контекст запуска", "не реализовано")
 @enduml
 ```
@@ -80,7 +96,15 @@ Rel(bitrix, api, "Контекст запуска", "не реализовано
 
 ```plantuml
 @startuml C4_Component
-!includeurl https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+!define Person(alias,label,descr) actor "label\\n--\\ndescr" as alias
+!define System(alias,label,descr) rectangle "label\\n--\\ndescr" as alias
+!define System_Ext(alias,label,descr) cloud "label\\n--\\ndescr" as alias
+!define Container(alias,label,tech,descr) rectangle "label\\n[tech]\\n--\\ndescr" as alias
+!define ContainerDb(alias,label,tech,descr) database "label\\n[tech]\\n--\\ndescr" as alias
+!define Component(alias,label,tech,descr) component "label\\n[tech]\\n--\\ndescr" as alias
+!define System_Boundary(alias,label) rectangle "label" as alias
+!define Container_Boundary(alias,label) rectangle "label" as alias
+!define Rel(a,b,label,tech) a --> b : label\\n[tech]
 
 title Fastify API — Component Diagram
 
@@ -96,26 +120,26 @@ Container_Boundary(api, "Application API") {
   Component(dbaccess, "SQLite Adapter", "database/index.js", "Соединение, DDL и транзакции")
 }
 
-ContainerDb(db, "SQLite", "report.sqlite")
-Container(web, "React SPA", "Web client")
+ContainerDb(db, "SQLite", "report.sqlite", "Операционное хранилище")
+Container(web, "React SPA", "Web client", "Пользовательский интерфейс")
 
-Rel(web, auth, "Каждый API-запрос")
-Rel(web, session, "GET session")
-Rel(web, dashboard, "GET objects/records")
-Rel(web, manual, "GET/POST report")
-Rel(web, history, "GET/revert")
-Rel(web, resource, "GET/PUT measures")
-Rel(web, admin, "Admin CRUD")
-Rel(manual, rules, "Валидирует и рассчитывает")
-Rel(dashboard, rules, "Сверяет итог качества")
-Rel(auth, dbaccess, "SQL")
-Rel(session, dbaccess, "SQL")
-Rel(dashboard, dbaccess, "SQL")
-Rel(manual, dbaccess, "SQL/transaction")
-Rel(history, dbaccess, "SQL/transaction")
-Rel(resource, dbaccess, "SQL/transaction")
-Rel(admin, dbaccess, "SQL/transaction")
-Rel(dbaccess, db, "node:sqlite")
+Rel(web, auth, "Каждый API-запрос", "HTTP")
+Rel(web, session, "GET session", "JSON")
+Rel(web, dashboard, "GET objects/records", "JSON")
+Rel(web, manual, "GET/POST report", "JSON")
+Rel(web, history, "GET/revert", "JSON")
+Rel(web, resource, "GET/PUT measures", "JSON")
+Rel(web, admin, "Admin CRUD", "JSON")
+Rel(manual, rules, "Валидирует и рассчитывает", "JavaScript")
+Rel(dashboard, rules, "Сверяет итог качества", "JavaScript")
+Rel(auth, dbaccess, "Читает права", "SQL")
+Rel(session, dbaccess, "Читает пользователя", "SQL")
+Rel(dashboard, dbaccess, "Читает отчёты", "SQL")
+Rel(manual, dbaccess, "Сохраняет отчёт", "SQL/transaction")
+Rel(history, dbaccess, "Откатывает изменения", "SQL/transaction")
+Rel(resource, dbaccess, "Сохраняет меры", "SQL/transaction")
+Rel(admin, dbaccess, "Администрирует", "SQL/transaction")
+Rel(dbaccess, db, "Читает и пишет", "node:sqlite")
 @enduml
 ```
 
@@ -207,6 +231,11 @@ entity people_quality_records {
   people_count_fact : TEXT
   productivity_fact : TEXT
   cleanliness_fact : TEXT
+  work_quality_score : INTEGER
+  discipline_score : INTEGER
+  people_count_score : INTEGER
+  productivity_score : INTEGER
+  cleanliness_score : INTEGER
   source_import_id : INTEGER <<FK>>
   source_sheet : TEXT
   source_row : INTEGER
@@ -228,6 +257,7 @@ entity manual_plan_rows {
   created_by : INTEGER <<FK>>
   created_at : TEXT
   updated_at : TEXT
+  source_import_id : INTEGER <<FK>>
 }
 
 entity report_edit_locks {
@@ -251,19 +281,10 @@ entity managed_dictionary_values {
   UNIQUE(category, value)
 }
 
-entity manual_dictionary_values {
-  * dictionary_id : INTEGER <<PK>>
-  --
-  category : TEXT
-  value : TEXT
-  created_by : INTEGER <<FK>>
-  created_at : TEXT
-  UNIQUE(category, value)
-}
-
 entity resource_quality_work {
   * quality_work_id : INTEGER <<PK>>
   --
+  record_id : INTEGER <<FK>>
   object_id : INTEGER <<FK>>
   report_date : TEXT
   work_type : TEXT
@@ -297,7 +318,7 @@ entity import_changes {
   * change_id : INTEGER <<PK>>
   --
   import_id : INTEGER <<FK>>
-  record_id : INTEGER <<logical FK>>
+  record_id : INTEGER <<FK>>
   change_type : TEXT
   previous_data_json : TEXT
   new_data_json : TEXT
@@ -311,6 +332,16 @@ entity import_errors {
   source_row : INTEGER
   message : TEXT
   raw_data_json : TEXT
+}
+
+entity plan_changes {
+  * change_id : INTEGER <<PK>>
+  --
+  import_id : INTEGER <<FK>>
+  plan_row_id : INTEGER <<FK>>
+  change_type : TEXT
+  previous_data_json : TEXT
+  new_data_json : TEXT
 }
 
 users ||--o{ user_object_access
@@ -328,15 +359,16 @@ users ||--o{ manual_plan_rows : creates
 objects ||--o{ report_edit_locks
 users ||--o{ report_edit_locks
 users ||--o{ managed_dictionary_values
-users ||--o{ manual_dictionary_values
 objects ||--o{ resource_quality_work
 users ||--o{ resource_quality_work : updates
 objects ||--o{ resource_feedback
 users ||--o{ resource_feedback : updates
 imports ||--o{ import_changes
+imports ||--o{ plan_changes
 imports ||--o{ import_errors
-people_quality_records ||..o{ import_changes : logical_only
-people_quality_records ||..o| resource_quality_work : composite_key
+people_quality_records ||--o{ import_changes
+people_quality_records ||--o| resource_quality_work
+manual_plan_rows ||--o{ plan_changes
 people_quality_records ||..o| resource_feedback : composite_key
 @enduml
 ```
@@ -550,3 +582,12 @@ Observer --> O6
 9. Добавить интеграционные тесты полного сохранения пятницы, отката, конкурентной блокировки и RBAC.
 10. Настроить резервное копирование `report.sqlite`, `-wal` и `-shm` согласованным SQLite snapshot/backup-механизмом.
 
+## 15. Реализованные меры надёжности
+
+Критические пункты аудита реализованы. Сохранение отчёта создаёт один агрегированный `import_changes` на запись и сохраняет исходный снимок до любых пятничных обновлений. Изменения постоянного плана журналируются отдельно в `plan_changes`; административный откат восстанавливает и факт, и план.
+
+`resource_quality_work.record_id` и `import_changes.record_id` являются внешними ключами к `people_quality_records`. Рабочая запись подразделения ресурсов ищется и обновляется по `record_id`, а составные текстовые поля остаются только снимком для отображения. Единственный изменяемый справочник — `managed_dictionary_values`; legacy-таблица удаляется миграцией.
+
+Версия схемы хранится в `schema_migrations`. Перед применением набора новых DDL-миграций создаётся согласованный снимок SQLite через `VACUUM INTO`: он включает все зафиксированные данные из основного файла и WAL, поэтому отдельное копирование потенциально рассинхронизированных `report.sqlite-wal` и `report.sqlite-shm` не требуется. Ручной снимок создаётся командой `npm run backup` в `data/backups/`.
+
+Пять числовых оценок хранятся в колонках `*_score` рядом с выбранными текстами; итог `quality_score` вычисляется из этих значений. Сервер отклоняет невозможные календарные даты и строки без подрядчика. Интеграционные тесты проверяют пятничное сохранение, отсутствие дубля аудита, откат факта и плана, конкурентную блокировку и RBAC.

@@ -1,5 +1,11 @@
 PRAGMA foreign_keys = ON;
 
+CREATE TABLE IF NOT EXISTS schema_migrations (
+    version            INTEGER PRIMARY KEY,
+    name               TEXT NOT NULL,
+    applied_at         TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS users (
     user_id            INTEGER PRIMARY KEY,
     bitrix_member_id   TEXT,
@@ -75,6 +81,11 @@ CREATE TABLE IF NOT EXISTS people_quality_records (
     people_count_fact  TEXT,
     productivity_fact  TEXT,
     cleanliness_fact   TEXT,
+    work_quality_score INTEGER CHECK (work_quality_score IS NULL OR work_quality_score BETWEEN 0 AND 5),
+    discipline_score   INTEGER CHECK (discipline_score IS NULL OR discipline_score BETWEEN 0 AND 5),
+    people_count_score INTEGER CHECK (people_count_score IS NULL OR people_count_score BETWEEN 0 AND 5),
+    productivity_score INTEGER CHECK (productivity_score IS NULL OR productivity_score BETWEEN 0 AND 5),
+    cleanliness_score  INTEGER CHECK (cleanliness_score IS NULL OR cleanliness_score BETWEEN 0 AND 5),
     source_import_id   INTEGER NOT NULL,
     source_sheet       TEXT NOT NULL DEFAULT 'Форма отчета',
     source_row         INTEGER NOT NULL,
@@ -103,22 +114,26 @@ CREATE TABLE IF NOT EXISTS manual_plan_rows (
     created_by          INTEGER NOT NULL,
     created_at          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    source_import_id    INTEGER,
     FOREIGN KEY (object_id) REFERENCES objects(object_id) ON DELETE CASCADE,
     FOREIGN KEY (created_by) REFERENCES users(user_id),
+    FOREIGN KEY (source_import_id) REFERENCES imports(import_id),
     UNIQUE (object_id, work_type, detail, contractor)
 );
 
 CREATE INDEX IF NOT EXISTS ix_manual_plan_object
 ON manual_plan_rows(object_id, is_active, sort_order);
 
-CREATE TABLE IF NOT EXISTS manual_dictionary_values (
-    dictionary_id       INTEGER PRIMARY KEY,
-    category            TEXT NOT NULL CHECK (category IN ('work_type', 'cause')),
-    value               TEXT NOT NULL,
-    created_by          INTEGER NOT NULL,
-    created_at          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (created_by) REFERENCES users(user_id),
-    UNIQUE (category, value)
+CREATE TABLE IF NOT EXISTS plan_changes (
+    change_id          INTEGER PRIMARY KEY,
+    import_id          INTEGER NOT NULL,
+    plan_row_id        INTEGER,
+    change_type        TEXT NOT NULL CHECK (change_type IN ('insert', 'update', 'deactivate')),
+    previous_data_json TEXT,
+    new_data_json      TEXT NOT NULL,
+    FOREIGN KEY (import_id) REFERENCES imports(import_id) ON DELETE CASCADE,
+    FOREIGN KEY (plan_row_id) REFERENCES manual_plan_rows(plan_row_id) ON DELETE SET NULL,
+    UNIQUE (import_id, plan_row_id)
 );
 
 CREATE TABLE IF NOT EXISTS report_edit_locks (
@@ -178,6 +193,7 @@ CREATE TABLE IF NOT EXISTS resource_feedback (
 
 CREATE TABLE IF NOT EXISTS resource_quality_work (
     quality_work_id     INTEGER PRIMARY KEY,
+    record_id           INTEGER NOT NULL UNIQUE,
     object_id           INTEGER NOT NULL,
     report_date         TEXT NOT NULL,
     work_type           TEXT NOT NULL,
@@ -192,18 +208,23 @@ CREATE TABLE IF NOT EXISTS resource_quality_work (
     created_at          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (object_id) REFERENCES objects(object_id) ON DELETE CASCADE,
+    FOREIGN KEY (record_id) REFERENCES people_quality_records(record_id) ON DELETE CASCADE,
     FOREIGN KEY (updated_by) REFERENCES users(user_id),
-    UNIQUE (object_id, report_date, work_type, detail, contractor)
+    UNIQUE (record_id)
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_resource_quality_record
+ON resource_quality_work(record_id) WHERE record_id IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS import_changes (
     change_id          INTEGER PRIMARY KEY,
     import_id          INTEGER NOT NULL,
-    record_id          INTEGER NOT NULL,
+    record_id          INTEGER,
     change_type        TEXT NOT NULL CHECK (change_type IN ('insert', 'update')),
     previous_data_json TEXT,
     new_data_json      TEXT NOT NULL,
     FOREIGN KEY (import_id) REFERENCES imports(import_id),
+    FOREIGN KEY (record_id) REFERENCES people_quality_records(record_id) ON DELETE SET NULL,
     UNIQUE (import_id, record_id)
 );
 
@@ -239,6 +260,11 @@ SELECT
     r.people_count_fact,
     r.productivity_fact,
     r.cleanliness_fact,
+    r.work_quality_score,
+    r.discipline_score,
+    r.people_count_score,
+    r.productivity_score,
+    r.cleanliness_score,
     r.source_import_id,
     r.source_row
 FROM people_quality_records r
