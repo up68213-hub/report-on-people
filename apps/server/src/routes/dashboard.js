@@ -1,5 +1,12 @@
 import { db } from '../database/index.js';
 import { accessibleObjectIds, canViewObject } from '../auth/index.js';
+import { QUALITY_CRITERIA, qualityScore } from '../manual/manual-report.js';
+
+function consistentQualityScore(row) {
+  const values = Object.fromEntries(QUALITY_CRITERIA.map((criterion) => [criterion.key, row[criterion.field]]));
+  return QUALITY_CRITERIA.every((criterion) => String(values[criterion.key] || '').trim())
+    ? qualityScore(values) : row.quality_score;
+}
 
 function placeholders(items) {
   return items.map(() => '?').join(', ');
@@ -64,7 +71,7 @@ export async function dashboardRoutes(app) {
       LEFT JOIN users u ON u.user_id = i.uploaded_by
       WHERE v.object_id IN (${placeholders(ids)})${dateClause.replace('report_date', 'v.report_date')}
       ORDER BY report_date, object_name, source_row
-    `).all(...params);
+    `).all(...params).map((row) => ({ ...row, quality_score: consistentQualityScore(row) }));
     const availableDates = db.prepare(`
       SELECT DISTINCT report_date AS date FROM people_quality_records
       WHERE object_id IN (${placeholders(ids)}) ORDER BY report_date

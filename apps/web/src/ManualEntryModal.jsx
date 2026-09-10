@@ -4,7 +4,13 @@ import Dialog from './Dialog.jsx';
 import { ClearableInput, ComboBox, NonNegativeIntegerInput, ReplaceOnFocusInput } from './UiControls.jsx';
 
 const QUALITY_KEYS = ['workQualityFact', 'disciplineFact', 'peopleCountFact', 'productivityFact', 'cleanlinessFact'];
-const CONTRACTOR_FAULT = 'фронт и материалы есть, нет людей';
+const faultKey = (value) => String(value ?? '').trim().toLocaleLowerCase('ru-RU').replace(/[,.]/g, '').replace(/\s+/g, ' ');
+const CONTRACTOR_FAULTS = new Set([
+  'фронт и материалы есть нет людей',
+  'фронт есть нет людей и материалов от подрядчика',
+  'фронт есть материалы есть людей нет',
+]);
+const isContractorFaultCause = (value) => CONTRACTOR_FAULTS.has(faultKey(value));
 const OWN = 'собственные силы';
 const norm = (value) => String(value ?? '').trim().toLocaleLowerCase('ru-RU').replace(/\s+/g, ' ');
 const identity = (row) => `${norm(row.contractor)}\u001f${norm(row.workType)}`;
@@ -26,7 +32,7 @@ export function liveErrorsFor(rows, reportDate) {
     if (row.actualPeople !== null && row.actualPeople !== '' && Number(row.actualPeople) < Number(row.planPeople || 0) && !isOwn(row) && !String(row.cause || '').trim()) {
       errors.push({ row: rowNumber, field: 'cause', message: 'Укажите причину отклонения.' });
     }
-    if (norm(row.cause) === CONTRACTOR_FAULT && !String(row.decision || '').trim()) errors.push({ row: rowNumber, field: 'decision', message: 'Для этой причины необходимо решение.' });
+    if (isContractorFaultCause(row.cause) && !String(row.decision || '').trim()) errors.push({ row: rowNumber, field: 'decision', message: 'Для этой причины необходимо решение.' });
     if (isFriday(reportDate) && Number(row.actualPeople) > 0 && row.contractor && !isOwn(row) && filledQuality(row) < 5) errors.push({ row: rowNumber, field: 'quality', message: `Заполните оценку: ${filledQuality(row)} из 5.` });
     return errors;
   });
@@ -161,7 +167,7 @@ export default function ManualEntryModal({ open, readOnly = false, userId, onClo
     setConfirm({ title: 'Закрыть без сохранения?', text: `Заполнено ${totals.filled} строк. Изменения останутся в черновике.`, action: () => onClose() });
   };
   const save = async () => {
-    if (errors.length) { setValidationOpen(true); notify(`В форме ошибок: ${errors.length}`, 'error'); return; }
+    if (errors.length) { setValidationOpen(true); return; }
     if (missingQuality.length) { setConfirm({ title: 'Нужна оценка за неделю', text: 'Отчёт за пятницу закрывает неделю. Заполните оценки всех подрядчиков.', action: () => setQualityOpen(true), actionText: 'Оценить' }); return; }
     setSaving(true);
     try {
@@ -198,7 +204,7 @@ export default function ManualEntryModal({ open, readOnly = false, userId, onClo
               <Cell error={errorFor(index, 'actualPeople')} warning={dev > 0 ? 'Факт больше плана — проверьте.' : ''}><NonNegativeIntegerInput value={row.actualPeople} onChange={(value) => updateRow(index, 'actualPeople', value)} placeholder="—" /></Cell>
               <td><b className={`v4-dev ${dev < 0 ? 'neg' : dev > 0 ? 'pos' : ''}`}>{dev === null ? '—' : `${dev > 0 ? '+' : ''}${dev}`}</b></td>
               <Cell error={errorFor(index, 'cause')}><ComboBox options={catalogs.causes} value={row.cause} allowCustom onChange={(value) => updateRow(index, 'cause', value)} placeholder={dev < 0 && !isOwn(row) ? 'обязательно' : 'при необходимости'} /></Cell>
-              <Cell error={errorFor(index, 'decision')}><ComboBox options={catalogs.decisions} value={row.decision} allowCustom onChange={(value) => updateRow(index, 'decision', value)} placeholder={norm(row.cause) === CONTRACTOR_FAULT ? 'обязательно' : 'при необходимости'} /></Cell>
+              <Cell error={errorFor(index, 'decision')}><ComboBox options={catalogs.decisions} value={row.decision} allowCustom onChange={(value) => updateRow(index, 'decision', value)} placeholder={isContractorFaultCause(row.cause) ? 'обязательно' : 'при необходимости'} /></Cell>
               <td><button className="v4-remove" onClick={() => setConfirm({ title: 'Убрать строку?', text: `${row.workType || 'Без названия'} — ${row.contractor || 'без подрядчика'} исчезнет из сегодняшнего отчёта.`, actionText: 'Убрать', action: () => removeIndexes(new Set([index])) })}>×</button></td></tr>
           </FragmentRow>; })}
           {!visible.length && <tr><td colSpan="10" className="v4-empty">Ничего не найдено</td></tr>}<tr className="v4-add"><td colSpan="10"><button onClick={addRow}><span>+</span>Добавить строку</button></td></tr>

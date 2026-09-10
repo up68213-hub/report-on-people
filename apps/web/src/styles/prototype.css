@@ -1672,6 +1672,7 @@
     .toast.show {
       opacity: 1;
       transform: translateX(-50%) translateY(0);
+      pointer-events: auto;
     }
     .toast.success .toast-icon {
       color: var(--success);
@@ -1682,6 +1683,21 @@
     .toast .toast-icon {
       font-size: 20px;
     }
+    .toast-close {
+      display: grid;
+      width: 26px;
+      height: 26px;
+      padding: 0;
+      place-items: center;
+      border: 0;
+      border-radius: 7px;
+      background: transparent;
+      color: var(--ink-mute);
+      cursor: pointer;
+      font: inherit;
+      font-size: 18px;
+    }
+    .toast-close:hover { background: var(--surface-3); color: var(--danger); }
 
     ::-webkit-scrollbar {
       width: 5px;

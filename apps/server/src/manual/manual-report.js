@@ -9,7 +9,10 @@ export const WORK_TYPES = [
 
 export const CAUSES = [
   'нет готовности', 'нет подрядчика', 'нет материалов', 'нет проекта', 'нет оплаты',
-  'фронт и материалы есть, нет людей', 'Отпуск или командировка', 'Пятница',
+  'фронт и материалы есть, нет людей',
+  'Фронт есть, нет людей и материалов от подрядчика',
+  'Фронт есть, материалы есть, людей нет',
+  'Отпуск или командировка', 'Пятница',
 ];
 
 export const DECISIONS = [
@@ -63,6 +66,16 @@ function normalized(value) {
   return String(value ?? '').trim().toLocaleLowerCase('ru-RU').replace(/\s+/g, ' ');
 }
 
+const CONTRACTOR_FAULT_CAUSES = new Set([
+  'фронт и материалы есть нет людей',
+  'фронт есть нет людей и материалов от подрядчика',
+  'фронт есть материалы есть людей нет',
+]);
+
+function isContractorFaultCause(value) {
+  return CONTRACTOR_FAULT_CAUSES.has(normalized(value).replace(/[,.]/g, ''));
+}
+
 function isOwnForces(row) {
   return normalized(row.workType) === 'собственные силы' || normalized(row.contractor) === 'собственные силы';
 }
@@ -112,7 +125,7 @@ export function validateManualReport({ reportDate, rows, weeklyFacts = {} }) {
     if (actual < plan && !String(row.cause || '').trim()) {
       errors.push({ row: number, field: 'cause', message: 'При факте меньше плана укажите причину.' });
     }
-    if (normalized(row.cause) === 'фронт и материалы есть, нет людей' && !String(row.decision || '').trim()) {
+    if (isContractorFaultCause(row.cause) && !String(row.decision || '').trim()) {
       errors.push({ row: number, field: 'decision', message: 'Для этой причины необходимо выбрать решение.' });
     }
     if (!isFriday(reportDate) || !String(row.contractor || '').trim() || normalized(row.decision).includes('не выбран')) return;

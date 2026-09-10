@@ -12,7 +12,8 @@ const uiDate = (value) => value ? new Date(`${value}T00:00:00`).toLocaleDateStri
 
 export default function EntrySetupModal({ open, objects, initialObjectId, onClose, onContinue, notify }) {
   const [options, setOptions] = useState([]);
-  const available = useMemo(() => options.length ? options : objects.map((object) => ({ ...object, hasAccess: true })), [objects, options]);
+  const available = useMemo(() => (options.length ? options : objects.map((object) => ({ ...object, hasAccess: true })))
+    .filter((object) => object.hasAccess), [objects, options]);
   const [objectId, setObjectId] = useState('');
   const [reportDate, setReportDate] = useState(todayLocal);
   const [status, setStatus] = useState(null);
@@ -29,7 +30,7 @@ export default function EntrySetupModal({ open, objects, initialObjectId, onClos
   useEffect(() => {
     if (!open) return;
     const preferred = initialObjectId !== 'all' && available.some((item) => String(item.id) === String(initialObjectId))
-      ? String(initialObjectId) : String(available[0]?.id || '');
+      ? String(initialObjectId) : available.length === 1 ? String(available[0].id) : '';
     setObjectId(preferred); setReportDate(today); setStatus(null);
   }, [open, initialObjectId, available]);
 

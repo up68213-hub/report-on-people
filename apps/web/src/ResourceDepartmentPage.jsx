@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import html2canvas from 'html2canvas';
 import { api } from './api.js';
 
 export default function ResourceDepartmentPage({ notify, canEdit, userId }) {
@@ -44,10 +45,21 @@ export default function ResourceDepartmentPage({ notify, canEdit, userId }) {
               reportDate: row.date, workType: row.work, detail: row.det, contractor: row.contr,
               isResolved: row.done, measure: row.measure, dueDate: row.due, owner: row.owner, comment: row.comment })) }),
           });
-          event.source.postMessage({ type: 'resource-save-result', ok: true }, event.origin);
-          await load();
+          event.source.postMessage({ type: 'resource-save-result', ok: true, versions: event.data.versions || {} }, event.origin);
         } catch (error) {
-          event.source.postMessage({ type: 'resource-save-result', ok: false, message: error.message }, event.origin);
+          event.source.postMessage({ type: 'resource-save-result', ok: false, versions: event.data.versions || {}, message: error.message }, event.origin);
+        }
+      }
+      if (event.data?.type === 'resource-summary-png') {
+        try {
+          const target = frameRef.current?.contentDocument?.querySelector('.summary-mode .dlg');
+          if (!target) throw new Error('Окно резюме не найдено.');
+          const canvas = await html2canvas(target, { scale: 2, useCORS: true, logging: false,
+            backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--surface').trim() || '#fff' });
+          const link = document.createElement('a');
+          link.download = 'Резюме_отработки_подрядчиков.png'; link.href = canvas.toDataURL('image/png'); link.click();
+        } catch (error) {
+          notify?.(`Не удалось создать PNG: ${error.message}`, 'error');
         }
       }
     };

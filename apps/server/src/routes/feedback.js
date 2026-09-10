@@ -7,6 +7,13 @@ function scoreForCriterion(field, value) {
   return criterion?.options.find(([, text]) => text === value)?.[0] ?? null;
 }
 
+function consistentQualityScore(row) {
+  const scores = QUALITY_CRITERIA.map((criterion) => scoreForCriterion(criterion.field, row[criterion.field]));
+  return scores.every(Number.isFinite)
+    ? Math.round(scores.reduce((sum, value, index) => sum + value * QUALITY_CRITERIA[index].weight, 0) * 10) / 10
+    : row.qualityScore;
+}
+
 function identity(source) {
   return {
     objectId: Number(source?.objectId),
@@ -39,7 +46,7 @@ export async function feedbackRoutes(app) {
     return reply.code(201).send({ value });
   });
   app.get('/api/resource-deviations', async (request) => {
-    const ids = request.currentUser.role === 'administrator'
+    const ids = ['administrator', 'resource_manager'].includes(request.currentUser.role)
       ? db.prepare('SELECT object_id FROM objects WHERE is_active = 1').all().map((item) => item.object_id)
       : db.prepare(`SELECT o.object_id FROM user_object_access a JOIN objects o ON o.object_id=a.object_id
           WHERE a.user_id=? AND o.is_active=1`).all(request.currentUser.id).map((item) => item.object_id);
@@ -60,7 +67,7 @@ export async function feedbackRoutes(app) {
       LEFT JOIN resource_quality_work q ON q.object_id=r.object_id AND q.report_date=r.report_date
         AND q.work_type=r.work_type AND q.detail=r.detail AND q.contractor=r.contractor
       LEFT JOIN users u ON u.user_id=q.updated_by
-      WHERE r.object_id IN (${marks}) AND r.actual_people <> r.plan_people
+      WHERE r.object_id IN (${marks})
         AND lower(trim(r.work_type)) NOT IN ('собственные силы', 'собственный силы')
         AND lower(trim(r.contractor)) NOT IN ('собственные силы', 'собственный силы')
       ORDER BY r.report_date DESC, o.object_name, r.source_row
@@ -69,7 +76,7 @@ export async function feedbackRoutes(app) {
       .some((value) => String(value || '').trim().toLocaleLowerCase('ru-RU') === 'собственные силы'));
     const measures = db.prepare(`SELECT value FROM managed_dictionary_values
       WHERE category='resource_measure' AND is_active=1 ORDER BY value`).all().map((item) => item.value);
-    return { rows: externalRows.map((row) => ({ ...row, done: Boolean(row.done),
+    return { rows: externalRows.map((row) => ({ ...row, done: Boolean(row.done), qualityScore: consistentQualityScore(row),
       qualityCriterionScore: scoreForCriterion('work_quality_fact', row.qualityFact),
       safetyCriterionScore: scoreForCriterion('discipline_fact', row.safetyFact),
       peopleCriterionScore: scoreForCriterion('people_count_fact', row.peopleFact),

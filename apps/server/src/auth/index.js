@@ -44,7 +44,7 @@ export function requireRole(...roles) {
 }
 
 export function accessibleObjectIds(user) {
-  if (user.role === 'administrator') {
+  if (user.role === 'administrator' || user.role === 'resource_manager') {
     return db.prepare('SELECT object_id FROM objects WHERE is_active = 1').all().map((x) => x.object_id);
   }
   return db.prepare(`
@@ -56,7 +56,7 @@ export function accessibleObjectIds(user) {
 }
 
 export function canViewObject(user, objectId) {
-  if (user.role === 'administrator') return true;
+  if (user.role === 'administrator' || user.role === 'resource_manager') return true;
   return Boolean(db.prepare(`
     SELECT 1 FROM user_object_access
     WHERE user_id = ? AND object_id = ?

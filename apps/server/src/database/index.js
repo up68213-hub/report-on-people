@@ -108,11 +108,15 @@ const seedDevUsers = db.transaction(() => {
   `);
   insert.run('Администратор', 'admin@example.local', 'administrator');
   insert.run('Руководитель проекта', 'manager@example.local', 'project_manager');
+  insert.run('Сотрудник Деп. ресурсов', 'resources@example.local', 'resource_manager');
   insert.run('Наблюдатель', 'observer@example.local', 'observer');
 });
 
 if (config.authMode === 'dev') {
   seedDevUsers();
+  db.prepare(`INSERT INTO users (display_name, email, global_role)
+    SELECT 'Сотрудник Деп. ресурсов', 'resources@example.local', 'resource_manager'
+    WHERE NOT EXISTS (SELECT 1 FROM users WHERE global_role = 'resource_manager')`).run();
   db.prepare(`
     INSERT OR IGNORE INTO user_object_access (user_id, object_id, object_role)
     SELECT u.user_id, o.object_id, 'project_manager'

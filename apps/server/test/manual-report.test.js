@@ -7,14 +7,17 @@ const completeQuality = Object.fromEntries(QUALITY_CRITERIA.map((criterion) => [
 test('calculates the hidden weighted quality score from selected phrases', () => {
   assert.equal(qualityScore(completeQuality), 4);
   assert.equal(qualityScore({ workQualityFact: QUALITY_CRITERIA[0].options[0][1] }), 5);
+  assert.equal(qualityScore(Object.fromEntries(QUALITY_CRITERIA.map((criterion) => [criterion.key, criterion.options[2][1]]))), 3);
 });
 
 test('requires a cause for a shortfall and a decision for contractor fault', () => {
   const base = { workType: 'Отделка', contractor: 'Подрядчик', planPeople: 10, actualPeople: 5 };
   let errors = validateManualReport({ reportDate: '2026-08-31', rows: [base] });
   assert.equal(errors[0].field, 'cause');
-  errors = validateManualReport({ reportDate: '2026-08-31', rows: [{ ...base, cause: 'фронт и материалы есть, нет людей' }] });
-  assert.equal(errors[0].field, 'decision');
+  for (const cause of ['фронт и материалы есть, нет людей', 'Фронт есть, нет людей и материалов от подрядчика', 'Фронт есть, материалы есть, людей нет']) {
+    errors = validateManualReport({ reportDate: '2026-08-31', rows: [{ ...base, cause }] });
+    assert.equal(errors[0].field, 'decision');
+  }
   errors = validateManualReport({ reportDate: '2026-08-31', rows: [{ ...base, workType: 'Собственные силы' }] });
   assert.equal(errors.length, 0);
 });

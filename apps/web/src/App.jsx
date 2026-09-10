@@ -3,6 +3,24 @@ import html2canvas from 'html2canvas';
 import ManualEntryModal from './ManualEntryModal.jsx';
 import EntrySetupModal from './EntrySetupModal.jsx';
 import ResourceDepartmentPage from './ResourceDepartmentPage.jsx';
+
+const normalizeCaptureColor = (value) => String(value || '').replace(
+  /color\(srgb\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)(?:\s*\/\s*([\d.]+))?\)/gi,
+  (_, red, green, blue, alpha = '1') => `rgba(${Math.round(Number(red) * 255)}, ${Math.round(Number(green) * 255)}, ${Math.round(Number(blue) * 255)}, ${alpha})`,
+);
+
+function makeCloneCaptureSafe(documentClone) {
+  const colorProperties = ['color', 'backgroundColor', 'borderTopColor', 'borderRightColor', 'borderBottomColor',
+    'borderLeftColor', 'outlineColor', 'textDecorationColor', 'caretColor', 'fill', 'stroke', 'boxShadow', 'textShadow'];
+  documentClone.querySelectorAll('*').forEach((element) => {
+    const style = documentClone.defaultView?.getComputedStyle(element);
+    if (!style) return;
+    colorProperties.forEach((property) => {
+      const value = style[property];
+      if (value?.includes('color(')) element.style[property] = normalizeCaptureColor(value);
+    });
+  });
+}
 import AdminPage from './AdminPage.jsx';
 import { ClearableInput, ComboBox, DateRangeField } from './UiControls.jsx';
 import Dialog from './Dialog.jsx';
@@ -375,15 +393,16 @@ export default function App() {
   const notify = (message, type = 'success', retry = null) => {
     setToast({ message, type, retry });
     window.clearTimeout(notify.timeout);
-    if (type !== 'error') notify.timeout = window.setTimeout(() => setToast(null), 3500);
+    notify.timeout = window.setTimeout(() => setToast(null), type === 'error' ? 7000 : 3500);
   };
+
+  const defaultObjectSelection = (items) => items.length === 1 ? String(items[0].id) : 'all';
 
   const loadObjects = async (preserveSelection = true) => {
     const data = await api('/api/objects');
     setObjects(data.objects);
     if (!preserveSelection || (selectedObject !== 'all' && !data.objects.some((o) => String(o.id) === String(selectedObject)))) {
-      const latest = [...data.objects].sort((a, b) => String(b.latestDate || '').localeCompare(String(a.latestDate || '')))[0];
-      setSelectedObject(latest ? String(latest.id) : 'all');
+      setSelectedObject(defaultObjectSelection(data.objects));
     }
   };
 
@@ -404,12 +423,19 @@ export default function App() {
   useEffect(() => {
     Promise.all([api('/api/session'), api('/api/objects')]).then(([sessionData, objectData]) => {
       setSession(sessionData); setObjects(objectData.objects);
-      const latest = [...objectData.objects].sort((a, b) => String(b.latestDate || '').localeCompare(String(a.latestDate || '')))[0];
-      setSelectedObject(latest ? String(latest.id) : 'all');
-    }).catch((error) => notify(error.message, 'error'));
+      setSelectedObject(defaultObjectSelection(objectData.objects));
+    }).catch((error) => { setLoading(false); notify(error.message, 'error'); });
   }, []);
   useEffect(() => { if (session) loadRecords(); }, [session, selectedObject]);
   useEffect(() => { document.documentElement.dataset.theme = theme; }, [theme]);
+  useEffect(() => {
+    const syncSectionFromHash = () => {
+      const section = window.location.hash.slice(1);
+      if (['people', 'resources', 'admin'].includes(section)) setActiveSection(section);
+    };
+    window.addEventListener('hashchange', syncSectionFromHash);
+    return () => window.removeEventListener('hashchange', syncSectionFromHash);
+  }, []);
 
   const dateRows = useMemo(() => records.filter((row) => (!periodStart || row.report_date >= periodStart) && (!periodEnd || row.report_date <= periodEnd)), [records, periodStart, periodEnd]);
   const visibleRecords = useMemo(() => dateRows.filter((row) =>
@@ -445,14 +471,17 @@ export default function App() {
     try {
       const width = target.scrollWidth;
       const scrollBody = target.querySelector('.summary-body');
+      const detailScroll = target.querySelector('.table-wrap:has(#detail-table)');
+      const detailOverflow = detailScroll ? Math.max(0, detailScroll.scrollHeight - detailScroll.clientHeight) : 0;
       const height = scrollBody
         ? Math.max(target.scrollHeight, target.offsetHeight - scrollBody.clientHeight + scrollBody.scrollHeight)
-        : target.scrollHeight;
+        : target.scrollHeight + detailOverflow;
       const snapshot = await html2canvas(target, {
         scale: 2, useCORS: true, logging: false, width, height,
         windowWidth: Math.max(width, window.innerWidth), windowHeight: Math.max(height, window.innerHeight),
         backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || '#F4F7FC',
         onclone: (documentClone) => {
+          makeCloneCaptureSafe(documentClone);
           const clone = documentClone.querySelector(`[data-export-id="${exportId}"]`);
           if (!clone) return;
           clone.style.setProperty('transform', 'none', 'important');
@@ -463,6 +492,23 @@ export default function App() {
           clone.style.setProperty('height', `${height}px`, 'important');
           clone.style.setProperty('max-height', 'none', 'important');
           clone.style.setProperty('overflow', 'visible', 'important');
+          if (detailOverflow) {
+            const tableWrap = clone.querySelector('.table-wrap:has(#detail-table)');
+            const tableBody = tableWrap?.closest('.panel-body');
+            const tablePanel = tableWrap?.closest('.panel');
+            const panelsGrid = tableWrap?.closest('.panels-grid');
+            [tableWrap, tableBody, tablePanel, panelsGrid].filter(Boolean).forEach((element) => {
+              element.style.setProperty('height', 'auto', 'important');
+              element.style.setProperty('max-height', 'none', 'important');
+              element.style.setProperty('overflow', 'visible', 'important');
+              element.style.setProperty('min-height', '0', 'important');
+            });
+            tableWrap.style.setProperty('flex', 'none', 'important');
+            tableBody.style.setProperty('flex', 'none', 'important');
+            tablePanel.style.setProperty('align-self', 'start', 'important');
+            panelsGrid.style.setProperty('flex', 'none', 'important');
+            panelsGrid.style.setProperty('align-items', 'start', 'important');
+          }
           clone.querySelectorAll('.summary-body').forEach((body) => {
             body.style.setProperty('overflow', 'visible', 'important');
             body.style.setProperty('max-height', 'none', 'important');
@@ -477,6 +523,7 @@ export default function App() {
   return <>
     <aside className="app-sidebar">
       <div className="sidebar-brand sidebar-enko-brand"><img src="/enko-logo.png" alt="ЕНКО — строительный холдинг" /></div>
+      <div className="sidebar-section-label">Разделы</div>
       <nav className="sidebar-nav" aria-label="Разделы приложения">
         <button className={activeSection === 'people' ? 'active' : ''} onClick={() => openSection('people')}><Icon name="summary" /><span>Отчёт по людям</span></button>
         <button className={activeSection === 'resources' ? 'active' : ''} onClick={() => openSection('resources')}><Icon name="edit" /><span>Отработка подрядчиков</span></button>
@@ -486,10 +533,10 @@ export default function App() {
     </aside>
 
     {activeSection === 'people' && <div className="canvas" ref={canvasRef}>
-      <header className="people-heading report-prototype-heading"><div className="people-heading-title"><h1>ОТЧЁТ ПО <span className="accent">ЛЮДЯМ</span></h1><div className="people-update-context"><span />{loading ? 'обновляем…' : updatedContext}</div></div><div className="people-heading-filters"><label className="filter-field report-object-field"><ComboBox value={selectedObject} onChange={(value) => setSelectedObject(value || 'all')} options={[{ value: 'all', label: 'Все объекты' }, ...objects.map((item) => ({ value: item.id, label: item.name }))]} placeholder="Все объекты" /></label><div className="filter-field report-period-field"><DateRangeField start={periodStart} end={periodEnd} onChange={(start, end) => { setPeriodStart(start); setPeriodEnd(end); setDate(end || start); }} allowedDates={dates} placeholder="Весь период" clearable /></div><button className={`more-filters ${activeFilterCount ? 'has-active' : ''}`} title={filterSummary || 'Дополнительные фильтры не выбраны'} aria-label={filterSummary || 'Открыть дополнительные фильтры'} onClick={() => setFilterOpen(true)}>Ещё фильтры{activeFilterCount > 0 && <b>{activeFilterCount}</b>}</button><button type="button" className="report-header-reset" onClick={clearHeaderFilters}>Сбросить фильтры</button></div><div className="people-heading-actions">{canEnterData && <button className="people-entry-primary manual-entry-trigger" onClick={() => setEntrySetupOpen(true)}><Icon name="edit" />Заполнить отчёт</button>}<button className="people-text-action" onClick={() => setSummaryOpen(true)}>Резюме</button>{visibleRecords.length > 0 && <button className="people-text-action" onClick={() => capture(canvasRef.current, 'Мониторинг_стройки_дашборд.png')}>Скачать</button>}</div></header>
+      <header className="people-heading report-prototype-heading"><div className="people-heading-title"><h1>ОТЧЁТ ПО <span className="accent">ЛЮДЯМ</span></h1><div className="people-update-context"><span />{loading ? 'обновляем…' : updatedContext}</div></div><div className="people-heading-filters"><label className="filter-field report-object-field"><ComboBox value={selectedObject} onChange={(value) => setSelectedObject(value || 'all')} options={[{ value: 'all', label: 'Все объекты' }, ...objects.map((item) => ({ value: item.id, label: item.name }))]} placeholder="Все объекты" /></label><div className="filter-field report-period-field"><DateRangeField start={periodStart} end={periodEnd} onChange={(start, end) => { setPeriodStart(start); setPeriodEnd(end); setDate(end || start); }} allowedDates={dates} placeholder="Весь период" clearable /></div><button className={`more-filters ${activeFilterCount ? 'has-active' : ''}`} title={filterSummary || 'Дополнительные фильтры не выбраны'} aria-label={filterSummary || 'Открыть дополнительные фильтры'} onClick={() => setFilterOpen(true)}>Ещё фильтры{activeFilterCount > 0 && <b>{activeFilterCount}</b>}</button><button type="button" className="report-header-reset" onClick={clearHeaderFilters}>Сбросить фильтры</button></div><div className="people-heading-actions">{canEnterData && <button className="people-entry-primary manual-entry-trigger" onClick={() => setEntrySetupOpen(true)}><Icon name="edit" />Заполнить отчёт</button>}<button className="people-text-action" disabled={selectedObject === 'all'} title={selectedObject === 'all' ? 'Сначала выберите объект' : 'Открыть резюме'} onClick={() => setSummaryOpen(true)}>Резюме</button>{visibleRecords.length > 0 && <button className="people-text-action" onClick={() => capture(canvasRef.current, 'Мониторинг_стройки_дашборд.png')}>Скачать</button>}</div></header>
       {loading ? <DashboardSkeleton /> : !visibleRecords.length ? <DashboardEmptyState canEdit={canEnterData} hasFilters={activeFilterCount > 0}
         hasDates={dates.length > 1} onEnter={() => setEntrySetupOpen(true)} onReset={clearFilters}
-        onDate={() => document.querySelector('.topbar-field .ui-date-input')?.click()} /> : <><Kpis records={visibleRecords} />
+        onDate={() => document.querySelector('.report-period-field .ui-date-input')?.click()} /> : <><Kpis records={visibleRecords} />
       <div className="panels-grid">
         <DetailTable records={visibleRecords} filters={filters} toggleFilter={toggleFilter} onCriteria={setCriteriaGroup} />
         <div className="panel charts-panel"><div className="charts-stack">
@@ -513,7 +560,7 @@ export default function App() {
       initialReportDate={manualContext.reportDate}
       onChangeContext={() => { releaseManualLock(); setManualOpen(false); setEntrySetupOpen(true); }}
       notify={notify} onSaved={async () => { await loadObjects(); await loadRecords(); }}
-      onDashboard={({ objectId, reportDate }) => { setSelectedObject(String(objectId)); setDate(reportDate); clearFilters(); setManualOpen(false); openSection('people'); }} />
+      onDashboard={({ objectId, reportDate }) => { setSelectedObject(String(objectId)); setDate(reportDate); setPeriodStart(reportDate); setPeriodEnd(reportDate); clearFilters(); setManualOpen(false); openSection('people'); }} />
     {toast && <div className={`toast ${toast.type} show`} role={toast.type === 'error' ? 'alert' : 'status'}><span className="toast-icon">{toast.type === 'error' ? '×' : '✓'}</span><span className="toast-text">{toast.message}</span>{toast.retry && <button onClick={() => { setToast(null); toast.retry(); }}>Повторить</button>}{toast.type === 'error' && <button className="toast-close" onClick={() => setToast(null)} aria-label="Закрыть">×</button>}</div>}
   </>;
 }

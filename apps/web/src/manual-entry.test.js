@@ -15,8 +15,10 @@ describe('live manual-entry validation', () => {
   });
 
   it('requires a project-manager decision for contractor fault', () => {
-    const errors = liveErrorsFor([row({ cause: 'фронт и материалы есть, нет людей' })], '2026-09-03');
-    expect(errors.some((error) => error.field === 'decision')).toBe(true);
+    for (const cause of ['фронт и материалы есть, нет людей', 'Фронт есть, нет людей и материалов от подрядчика', 'Фронт есть, материалы есть, людей нет']) {
+      const errors = liveErrorsFor([row({ cause })], '2026-09-03');
+      expect(errors.some((error) => error.field === 'decision')).toBe(true);
+    }
   });
 
   it('marks all five quality criteria as required on Friday', () => {

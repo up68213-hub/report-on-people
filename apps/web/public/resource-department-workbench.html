@@ -99,7 +99,11 @@ body{background:var(--bg);color:var(--ink);font-family:var(--font);font-weight:6
 .list::before{content:'';position:sticky;top:0;display:block;height:12px;background:var(--surface);z-index:9}
 table{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0;font-size:12px}
 thead th{position:sticky;top:12px;z-index:8;background:var(--head);color:#fff;font-size:10.5px;font-weight:900;
- letter-spacing:.015em;text-transform:uppercase;text-align:left;padding:9px 4px;white-space:normal;cursor:pointer;user-select:none;line-height:1.15;overflow-wrap:anywhere;word-break:normal;overflow:hidden}
+ letter-spacing:.015em;text-transform:uppercase;text-align:left;padding:6px 4px;white-space:normal;cursor:pointer;user-select:none;line-height:1.1;overflow-wrap:anywhere;word-break:normal}
+thead th[data-help]{overflow:visible}thead th[data-help]::after{content:attr(data-help);position:absolute;left:4px;top:calc(100% + 7px);z-index:30;
+ width:max-content;max-width:210px;padding:7px 9px;border-radius:8px;background:var(--head);color:#fff;box-shadow:0 8px 20px var(--shadow);
+ font-size:11px;font-weight:700;line-height:1.3;letter-spacing:0;text-transform:none;opacity:0;pointer-events:none;transition:.15s}
+thead th[data-help]:hover::after{opacity:1}
 thead th:first-child{border-radius:10px 0 0 10px;vertical-align:middle}
 thead th:last-child{border-radius:0 10px 10px 0}
 thead th:hover{background:var(--head-hover)}
@@ -109,10 +113,13 @@ thead th .arw{margin-left:5px;font-size:9px}
 thead th small{display:block;font-size:9.5px;font-weight:700;color:rgba(255,255,255,.55);text-transform:none;letter-spacing:0;margin-top:2px}
 tbody td{padding:5px;border-bottom:1px solid var(--border);vertical-align:middle;overflow-wrap:anywhere}
 #thead th{vertical-align:middle;text-align:left}#thead th:first-child,#tb td:first-child{text-align:left;padding-left:4px}
-#thead th:nth-child(1){width:14%}#thead th:nth-child(2){width:10%}#thead th:nth-child(3){width:8%}
-#thead th:nth-child(4){width:8%}#thead th:nth-child(5){width:9%}#thead th:nth-child(6){width:9%}
-#thead th:nth-child(7){width:13%}#thead th:nth-child(8){width:15%}#thead th:nth-child(9){width:14%}
+#thead th:nth-child(4),#thead th:nth-child(5){padding-left:5px}
+#thead th:nth-child(1){width:8%}#thead th:nth-child(2){width:12%}#thead th:nth-child(3){width:13%}
+#thead th:nth-child(4){width:7%}#thead th:nth-child(5){width:7%}#thead th:nth-child(6){width:11%}
+#thead th:nth-child(7){width:14%}#thead th:nth-child(8){width:14%}#thead th:nth-child(9){width:14%}
 .list table .cb{min-width:0!important;width:100%}.list table .cmt-in{min-width:0;width:100%;font-size:11.5px;padding:6px}
+.list table .cb-in,.list table .cmt-in,.list table .decision-field{height:42px;min-height:42px;max-height:42px}
+.list table .cmt-in{overflow:auto;resize:none}
 .list table .lname,.list table .rp,.list table td{white-space:normal!important}
 .list table td>*{max-width:100%}.list table svg:not(.box svg){max-width:100%;height:auto}
 .list table .cmt-in,.dlg .cmt-in{border:1px solid var(--border);background:var(--field)}
@@ -127,14 +134,15 @@ tbody tr.done td{background:var(--ok-bg)}
 tbody tr.done.picked td{background:color-mix(in srgb,var(--ok-bg) 45%,var(--primary-soft))}
 tbody tr.dirty td{box-shadow:inset 0 2px 0 color-mix(in srgb,var(--primary) 45%,transparent)}
 tr.grp td{background:var(--surface-2);padding:9px 8px}
+tr.grp td:first-child{padding-left:4px}tr.grp td:nth-child(3),tr.grp td:nth-child(4){padding-left:5px}
 tr.grp:hover td{background:var(--surface-3)}
-.caret{display:inline-block;color:var(--ink-mute);font-size:11px;margin-right:7px;transition:transform .15s;cursor:pointer}
+.contractor-line{display:flex;align-items:center;width:100%;gap:7px}.contractor-line .gname{min-width:0}.contractor-line .caret{margin-left:auto;flex:0 0 auto}
+.caret{display:inline-block;color:var(--ink-mute);font-size:11px;transition:transform .15s;cursor:pointer}
 .caret.open{transform:rotate(90deg)}
 .gname{font-size:13.5px;font-weight:900;cursor:pointer}
 .gname:hover{color:var(--primary-active);text-decoration:underline}
 .gsub{font-size:11.5px;font-weight:700;color:var(--ink-mute)}
-.lname{font-weight:800;padding-left:18px;position:relative;cursor:pointer;white-space:nowrap}
-.lname::before{content:'';position:absolute;left:6px;top:50%;width:7px;height:1px;background:var(--ink-dim)}
+.lname{font-weight:800;padding-left:4px;position:relative;cursor:pointer;white-space:nowrap}
 .lname:hover{color:var(--primary-active);text-decoration:underline}
 .chk{display:inline-flex;position:relative;cursor:pointer;user-select:none}
 .chk input{position:absolute;inset:0;z-index:2;opacity:0;width:100%;height:100%;margin:0;cursor:pointer}
@@ -154,18 +162,20 @@ thead .box{border-color:rgba(255,255,255,.55);background:transparent}
 .gap.zero{color:var(--ink-dim)}
 .need{font-size:12px;font-weight:700;color:var(--ink-mute);white-space:normal;line-height:1.25}
 .need b{font-size:15px;font-weight:900;color:var(--danger-tx);font-variant-numeric:tabular-nums}
-.metric-child .need b,.metric-child .score,.metric-child .delta{color:var(--ink-mute)!important}
+.metric-child .need b{color:var(--ink-mute)!important}
 .sub{display:block;font-size:10.5px;font-weight:800;color:var(--ink-mute);margin-top:1px}
-.score{font-size:15px;font-weight:900;font-variant-numeric:tabular-nums;display:block;line-height:1.1;cursor:help;
- border-bottom:1.5px dotted var(--ink-dim);width:max-content}
-.s-c{color:var(--danger-tx)}.s-a{color:var(--warn-tx)}.s-g{color:var(--ok-tx)}.s-e{color:var(--primary-active)}
-.delta{font-size:12px;font-weight:900;font-variant-numeric:tabular-nums;white-space:nowrap}
+.score{display:inline-block;width:max-content;color:var(--ink);font-size:15px;font-weight:900;font-variant-numeric:tabular-nums;line-height:1.35;cursor:help}
+.score.s-c{color:#D88188}.score.s-a{color:#C49348}.score.s-g{color:#4A8BBE}.score.s-e{color:#799B5D}
+.delta{font-size:12px;font-weight:500;font-variant-numeric:tabular-nums;white-space:nowrap}
 .delta.up{color:var(--ok-tx)}.delta.down{color:var(--danger-tx)}.delta.flat{color:var(--ink-dim)}
 .rp{font-size:12px;font-weight:700;color:var(--ink-soft);max-width:170px;line-height:1.3}
-.tagd{display:block;max-width:100%;font-size:10px;font-weight:800;padding:3px 7px;border-radius:9px;white-space:normal;line-height:1.25;overflow-wrap:anywhere;
+.tagd{display:flex;align-items:center;max-width:100%;font-size:12px;font-weight:700;padding:5px 7px;border-radius:9px;white-space:normal;line-height:1.3;overflow-wrap:anywhere;
  background:var(--warn-bg);color:var(--warn-tx)}
 .tagd.hard{background:var(--danger-bg);color:var(--danger-tx)}
 .tagd.soft{background:var(--surface-3);color:var(--ink-mute)}
+.tagd.d-replace{background:#C0392B;color:#fff}.tagd.d-search{background:#D88188;color:#fff}
+.tagd.d-claim{background:#D9A05B;color:#4A2E08}.tagd.d-notice{background:#EECB95;color:#6B4E14}
+.tagd.d-boost{background:#F6E4C4;color:#6B4E14;box-shadow:inset 0 0 0 1px #E0C89B}.tagd.d-none{background:#BDC3C7;color:#fff}
 .flag{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:900;padding:3px 9px;border-radius:99px;
  background:var(--danger-bg);color:var(--danger-tx);white-space:nowrap}
 .flag.q{background:var(--warn-bg);color:var(--warn-tx)}
@@ -182,6 +192,10 @@ thead .box{border-color:rgba(255,255,255,.55);background:transparent}
  box-shadow:0 8px 20px rgba(0,0,0,.22);opacity:0;pointer-events:none;transition:opacity .15s}
 .cell:hover .tip,.cell:focus-within .tip{opacity:1}
 .cell.has-err .cmt-in,.cell.has-err .cb-in{border:1px solid var(--danger);background:var(--danger-bg)}
+.list tbody td,.list .need,.list .need b,.list .score,.list .delta,.list .rp,
+.list .tagd,.list .cb-in,.list .cmt-in{font-size:12.5px;font-weight:800}
+.cb-dd{scrollbar-width:thin;scrollbar-color:var(--scroll-thumb) transparent}
+.cb-dd::-webkit-scrollbar{width:6px}.cb-dd::-webkit-scrollbar-thumb{background:var(--scroll-thumb);border-radius:99px}
 
 .bulk{position:fixed;left:50%;bottom:92px;transform:translateX(-50%) translateY(10px);z-index:60;display:flex;align-items:center;
  gap:10px;padding:8px 10px 8px 18px;background:var(--head);color:#fff;border-radius:12px;box-shadow:0 14px 34px rgba(0,0,0,.3);
@@ -199,6 +213,7 @@ thead .box{border-color:rgba(255,255,255,.55);background:transparent}
 .detail{flex:1;overflow:hidden;padding:12px 16px 14px;display:grid;gap:10px;
  grid-template-rows:auto auto minmax(0,1fr) minmax(0,0.95fr)}
 .dh{display:flex;align-items:center;gap:14px;flex-wrap:wrap;min-height:0}
+.backlink{color:var(--primary-active);font-weight:900;cursor:pointer}.backlink:hover{color:var(--primary);text-decoration:underline}
 .dh-name{font-size:18px;font-weight:900;line-height:1.2}
 .dh-name small{display:block;font-size:12px;font-weight:700;color:var(--ink-mute);margin-top:3px}
 .dh-right{margin-left:auto;display:flex;align-items:center;gap:12px}
@@ -266,8 +281,6 @@ thead .box{border-color:rgba(255,255,255,.55);background:transparent}
 .htip-r + .htip-r{border-top:1px solid rgba(255,255,255,.10)}
 .htip-k{color:rgba(255,255,255,.62);font-weight:800}
 .htip-b{font-weight:900;text-align:right}
-.htip-f{margin-top:9px;padding-top:8px;border-top:1px solid rgba(255,255,255,.12);font-size:11.5px;font-weight:700;color:rgba(255,255,255,.6)}
-
 .ov{position:fixed;inset:0;background:rgba(26,42,58,.45);backdrop-filter:blur(3px);display:none;align-items:center;
  justify-content:center;padding:20px;z-index:70}
 .ov.show{display:flex}
@@ -279,6 +292,27 @@ thead .box{border-color:rgba(255,255,255,.55);background:transparent}
 .summary-list{display:grid;gap:9px;max-height:52vh;overflow:auto;margin-top:14px;padding-right:3px}
 .summary-item{padding:11px 13px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2)}
 .summary-item b{display:block;color:var(--ink);font-size:13px}.summary-item span{display:block;margin-top:4px;color:var(--ink-soft);font-size:12px;line-height:1.4}
+.ov.summary-mode .dlg{width:min(780px,100%);max-height:90vh;padding:0;border-radius:28px;display:flex;flex-direction:column;overflow:hidden}
+.ov.summary-mode .dlg-t{padding:22px 28px 8px;font-size:18px;letter-spacing:.06em;text-transform:uppercase}
+.ov.summary-mode .dlg-t{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.ov.summary-mode .dlg-t .accent{color:var(--primary)}
+.summary-close{width:36px;height:36px;display:grid;place-items:center;flex:0 0 auto;border:0;border-radius:50%;background:var(--surface);color:var(--ink-soft);box-shadow:0 4px 12px var(--shadow);font-size:20px;cursor:pointer}
+.summary-close:hover{color:var(--ink);background:var(--surface-2)}
+.ov.summary-mode .dlg-x{margin:0;padding:0 28px 14px;border-bottom:1px solid var(--border);font-size:12px}
+.ov.summary-mode #dExtra{min-height:0;overflow:auto;padding:14px 28px 18px}
+.ov.summary-mode .dlg-f{margin:0;padding:14px 28px 22px;border-top:1px solid var(--border)}
+.summary-foot-info{margin-right:auto;color:var(--ink-mute);font-size:11.5px;font-weight:700}.summary-png{color:var(--primary-active)!important}
+.summary-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+.summary-kpi{padding:13px 16px;border-radius:16px;background:var(--surface-2);box-shadow:0 4px 12px var(--shadow)}
+.summary-kpi span{display:block;color:var(--ink-mute);font-size:10px;font-weight:900;letter-spacing:.07em;text-transform:uppercase}
+.summary-kpi b{display:block;margin-top:4px;color:var(--ink);font-size:22px;font-weight:900}
+.summary-section{padding:14px 18px;border-radius:18px;background:var(--surface-2);box-shadow:0 4px 12px var(--shadow)}
+.summary-section+.summary-section{margin-top:10px}.summary-section-title{color:var(--ink);font-size:13px;font-weight:900}
+.summary-section-meta{margin-top:2px;color:var(--ink-mute);font-size:11px;font-weight:700}
+.summary-line{position:relative;margin-top:9px;padding-left:18px;color:var(--ink-soft);font-size:12.5px;line-height:1.45}
+.summary-line::before{content:'';position:absolute;left:0;top:6px;width:8px;height:8px;border-radius:50%;background:var(--primary)}
+.summary-line.feedback::before{background:var(--warn)}.summary-line strong{color:var(--ink);font-weight:900}
+@media(max-width:650px){.summary-kpis{grid-template-columns:1fr}}
 .dlg-f{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;flex-wrap:wrap}
 .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%) translateY(14px);z-index:90;background:var(--surface);
  border:1px solid var(--primary);border-radius:11px;padding:10px 17px;box-shadow:0 12px 30px var(--shadow);font-size:12.5px;
@@ -303,7 +337,6 @@ thead .box{border-color:rgba(255,255,255,.55);background:transparent}
         <div class="prog-top"><span>Отработано из проблемных</span><span id="progTxt">0 из 0</span></div>
         <div class="prog-bar"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
       </div>
-      <span class="counter" id="draftAt">черновик 10:12</span>
       <button class="btn outline" id="btnSummary">Резюме</button>
     </div>
   </div>
@@ -315,7 +348,7 @@ thead .box{border-color:rgba(255,255,255,.55);background:transparent}
     </div>
     <div class="navp"><button id="pPrev">‹</button><span id="pLabel"></span><button id="pNext">›</button></div>
     <div class="cb" id="cbQ" style="min-width:240px">
-      <input class="cb-in" id="qIn" placeholder="Поиск: подрядчик, работа, объект" autocomplete="off">
+      <input class="cb-in" id="qIn" placeholder="Поиск: подрядчик, вид работы" autocomplete="off">
       <span class="cb-clear" id="qClr">✕</span><span class="cb-car">▾</span><div class="cb-dd" id="qDD"></div></div>
     <div class="cb" id="cbObj" style="min-width:210px">
       <input class="cb-in" id="objIn" placeholder="Все объекты" autocomplete="off">
@@ -332,11 +365,11 @@ thead .box{border-color:rgba(255,255,255,.55);background:transparent}
   <div class="list" id="screenList">
     <table>
       <thead><tr id="thead">
-        <th data-s="name">Подрядчик и вид работы</th>
-        <th data-s="object">Объект</th>
-        <th data-s="gap">Люди<small>нехватка на конец периода</small></th>
-        <th data-s="score">Качество<small>балл недели</small></th>
-        <th class="nosort">Динамика качества<small>6 недель</small></th>
+        <th data-s="date">Дата</th>
+        <th data-s="name">Подрядчик</th>
+        <th data-s="work">Вид работы</th>
+        <th data-s="gap" data-help="Отклонение факта от плана в строке отчёта">Люди</th>
+        <th data-s="score" data-help="Балл качества в строке отчёта">Качество</th>
         <th data-s="reason">Причина РП</th>
         <th data-s="decision">Решение РП</th>
         <th data-s="measure">Мера департамента</th>
@@ -350,15 +383,8 @@ thead .box{border-color:rgba(255,255,255,.55);background:transparent}
 
   <div class="foot">
     <div class="totals">
-      <span><b id="tGap">0</b>не хватает, чел.</span>
+      <span><b id="tGap">0</b>отклонение, чел.</span>
       <span><b id="tAvg">0</b>средний балл</span>
-      <span><b id="tReact">0</b>требуют реакции</span>
-      <span><b id="tWork">0</b>мер в работе</span>
-      <span><b id="dirtyCount">0</b>изменено</span>
-    </div>
-    <div class="foot-btns">
-      <button class="btn outline" id="btnDraft">Сохранить черновик</button>
-      <button class="btn" id="btnSave">Сохранить</button>
     </div>
   </div>
 </div>
@@ -469,15 +495,15 @@ let MEAS={
  'МонолитПром':[{date:'2026-08-18',type:'План корректирующих действий',text:'Подрядчик представил план по дисциплине и уборке, контроль еженедельно.',
    done:true,author:OWNER,tags:['quality'],link:9,day:DAYS.indexOf('2026-08-18')}]
 };
-const linkKey=l=>[l.name,l.object,l.work].join('\u001f');
+const linkKey=l=>[l.date,l.name,l.object,l.work].join('\u001f');
 const mOf=x=>typeof x==='object'?(MEAS[linkKey(x)]||[]):linksOf(x).flatMap(l=>MEAS[linkKey(l)]||[]);
 const R=id=>L.find(l=>l.id===+id);
 const linksOf=n=>L.filter(l=>l.name===n);
 let EDITABLE=true,SAVING=false;
 const DIRTY=new Set();
-const markDirty=l=>{if(l)DIRTY.add(l.id);};
-const RESOURCE_DRAFT='resource-contractor-work-draft-v2';let CURRENT_USER='unknown';
-const resourceDraftKey=()=>`${RESOURCE_DRAFT}:${CURRENT_USER}`;
+const VERSIONS=new Map();
+const EDIT_ROWS=new Map();
+const markDirty=l=>{if(l){DIRTY.add(l.id);VERSIONS.set(l.id,(VERSIONS.get(l.id)||0)+1);}};
 
 /* ── период ── */
 let PERIOD='week',offset=0;                       // offset: 0 = последний период
@@ -489,25 +515,38 @@ function periodLabel(){const{a,b}=range();
  if(PERIOD==='week')return WFULL[WEEK_OF[b]];
  return `${ru(DAYS[a])} — ${ru(DAYS[b])}`;}
 function weeksIn(){const{a,b}=range();const s=new Set();for(let i=a;i<=b;i++)s.add(WEEK_OF[i]);return [...s];}
+function rowsInPeriod(l){
+ if(!Array.isArray(l.sourceRows))return [];
+ const{a,b}=range();return l.sourceRows.filter(row=>{const i=DAYS.indexOf(row.date);return i>=a&&i<=b;});
+}
+function workRow(l){
+ const rows=rowsInPeriod(l),target=EDIT_ROWS.get(l.id);
+ return target&&rows.includes(target)?target:[...rows].reverse().find(row=>row.measure||row.comment)||rows.at(-1)||null;
+}
+function workValue(l,field){const row=workRow(l);return row?String(row[field]||''):String(l[field]||'');}
+function setWorkValue(l,field,value){const row=workRow(l);if(row){EDIT_ROWS.set(l.id,row);row[field]=value;}l[field]=value;}
 
 /* ── метрики ── */
 function people(l){const{a,b}=range();let gap=0,days=0,worst=0,worstDay=null;const vals=[];
  let total=0,last=null;
  for(let i=a;i<=b;i++){if(l.fact[i]==null)continue;total++;last=i;const d=l.fact[i]-l.plan;gap+=d;if(d<0){days++;vals.push(-d);if(d<worst){worst=d;worstDay=DAYS[i];}}}
- const now=last==null?0:Math.max(0,l.plan-l.fact[last]);
- const text=last==null?'нет данных':now?`<b>${now}</b> чел.`:'в норме';
+ const deviation=last==null?null:l.fact[last]-l.plan;
+ const now=deviation==null?0:Math.max(0,-deviation);
+ const text=deviation==null?'нет данных':deviation<0?`<b>${-deviation}</b> чел.`:deviation>0?`<b>+${deviation}</b> чел.`:'в норме';
  return {gap,days,total,worst,worstDay,now,text};}
 const qw=l=>{const w=weeksIn();return w[w.length-1];};
 const qScore=l=>l.q[qw(l)];
-const qDelta=l=>{const w=qw(l);return w>0?+(l.q[w]-l.q[w-1]).toFixed(1):0;};
-function qStreak(l){let n=0;for(let i=qw(l);i>0;i--){if(l.q[i]<l.q[i-1])n++;else break;}return n;}
+const qDelta=l=>{const w=qw(l);return w>0&&hasScoreValue(l.q[w])&&hasScoreValue(l.q[w-1])?+(l.q[w]-l.q[w-1]).toFixed(1):0;};
+function qStreak(l){let n=0;for(let i=qw(l);i>0;i--){if(hasScoreValue(l.q[i])&&hasScoreValue(l.q[i-1])&&l.q[i]<l.q[i-1])n++;else break;}return n;}
 const level=s=>s<2.5?['Критично','c']:s<3.5?['Требует внимания','a']:s<4.5?['Хорошо','g']:['Отлично','e'];
 const sCls=s=>s<2.5?'s-c':s<3.5?'s-a':s<4.5?'s-g':'s-e';
-const col=s=>s<2.5?'var(--danger)':s<3.5?'var(--warn)':s<4.5?'var(--ok)':'var(--primary)';
+const col=s=>s<2.5?'#D88188':s<3.5?'#EECB95':s<4.5?'#4A8BBE':'#9DB984';
 const weakKeys=l=>{const min=Math.min(...Object.values(l.crit));
  return !l.hasCriteria||min>=4?[]:CR.filter(([k])=>l.crit[k]===min).map(([k])=>k);};
 const weakOf=l=>{const k=weakKeys(l);return k.length?k.slice(0,2).map(x=>SHORT[x]).join(' и '):'нет';};
 const hardDecision=d=>/претенз|замен|приостан/i.test(d||'');
+const decisionCls=d=>{const v=String(d||'').toLowerCase();return /замен|приостан/.test(v)?'d-replace':/не выбран/.test(v)?'d-search':
+ /претенз/.test(v)?'d-claim':/уведомлен/.test(v)?'d-notice':/усилен/.test(v)?'d-boost':'d-none';};
 const mstate=n=>!mOf(n).length?'none':(mOf(n).every(m=>m.done)?'done':'work');
 
 // признак «требует реакции»: любой из сигналов
@@ -517,17 +556,19 @@ function flags(l){
  if(qScore(l)<3.5||qStreak(l)>=2)f.push('quality');
  if(hardDecision(l.decision))f.push('decision');
  const ms=mOf(l).filter(m=>!m.link||m.link===l.id);
- if(ms.length){const m=ms[0],e=effect(l,m);if(e.weeks>=2&&e.dq<0.2&&e.dp<=0)f.push('nofx');}
+ if(ms.length){const m=ms[0],e=effect(l,m);if(e.weeks>=2&&e.dq!=null&&e.dq<0.2&&e.dp<=0)f.push('nofx');}
  return f;
 }
 const needAction=l=>flags(l).length>0;
-const isDone=l=>Boolean(String(l.measure||'').trim());
+const isDone=l=>Boolean(workValue(l,'measure').trim());
 const hasScoreValue=v=>v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v));
-const hasQualityRating=l=>(l.sourceRows||[]).some(r=>hasScoreValue(r.qualityScore));
+const hasQualityRating=l=>Array.isArray(l.sourceRows)
+ ?rowsInPeriod(l).some(r=>hasScoreValue(r.qualityScore)):hasScoreValue(qScore(l));
 
 // эффект меры: люди и качество до/после
 function effect(l,m){
- const wk=WEEK_OF[m.day],qAt=l.q[wk],qNow=l.q[qw(l)],dq=+(qNow-qAt).toFixed(1);
+ const wk=WEEK_OF[m.day],qAt=l.q[wk],qNow=l.q[qw(l)];
+ const dq=hasScoreValue(qAt)&&hasScoreValue(qNow)?+(qNow-qAt).toFixed(1):null;
  const before=[],after=[];
  for(let i=Math.max(0,m.day-5);i<m.day;i++)if(l.fact[i]!=null)before.push(l.fact[i]-l.plan);
  for(let i=m.day+1;i<=range().b;i++)if(l.fact[i]!=null)after.push(l.fact[i]-l.plan);
@@ -535,8 +576,8 @@ function effect(l,m){
  const dp=+(avg(after)-avg(before)).toFixed(1);
  const weeks=qw(l)-wk;
  return {qAt,qNow,dq,dp,weeks,
-  verdict:weeks<1?'рано судить':(dq>=0.2||dp>=1)?'работает':(dq<=-0.2||dp<=-1)?'не сработала':'без изменений',
-  tone:weeks<1?'':(dq>=0.2||dp>=1)?'ok':(dq<=-0.2||dp<=-1)?'bad':'warn'};
+  verdict:weeks<1?'рано судить':((dq!=null&&dq>=0.2)||dp>=1)?'работает':((dq!=null&&dq<=-0.2)||dp<=-1)?'не сработала':'без изменений',
+  tone:weeks<1?'':((dq!=null&&dq>=0.2)||dp>=1)?'ok':((dq!=null&&dq<=-0.2)||dp<=-1)?'bad':'warn'};
 }
 function nextStep(n){const ms=mOf(n);if(!ms.length)return LADDER[0];
  const i=Math.max(...ms.map(m=>{const k=LADDER.indexOf(m.type);return k<0?0:k;}));
@@ -546,16 +587,15 @@ function nextStep(n){const ms=mOf(n);if(!ms.length)return LADDER[0];
 function sparkQ(l,w=104,h=28){
  if(!hasQualityRating(l))return '—';
  const wk=qw(l),f=Math.max(0,wk-5),vals=l.q.slice(f,wk+1),min=2,max=5;
- const pts=vals.map((v,i)=>[i/(vals.length-1)*(w-6)+3,h-3-((v-min)/(max-min))*(h-8)]);
+ const gap=3,bw=(w-gap*(vals.length-1))/vals.length;
  return `<svg width="${w}" height="${h}">
   <line x1="0" y1="${(h-3-((3.5-min)/(max-min))*(h-8)).toFixed(1)}" x2="${w}" y2="${(h-3-((3.5-min)/(max-min))*(h-8)).toFixed(1)}"
    stroke="var(--border)" stroke-dasharray="3 3"/>
-  <polyline points="${pts.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ')}" fill="none" stroke="${col(qScore(l))}" stroke-width="2"/>
-  <circle cx="${pts[pts.length-1][0].toFixed(1)}" cy="${pts[pts.length-1][1].toFixed(1)}" r="3" fill="${col(qScore(l))}"/></svg>`;
+  ${vals.map((v,i)=>{const bh=Math.max(3,((v-min)/(max-min))*(h-7));return `<rect x="${(i*(bw+gap)).toFixed(1)}" y="${(h-3-bh).toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" rx="2" fill="${col(v)}" opacity="${i===vals.length-1?1:.58}"/>`;}).join('')}</svg>`;
 }
 // общая ось: люди по дням + качество по неделям
 // Диаграмма 1: люди по дням за 4 недели, текущий период подсвечен
-function chartPeople(l,ms){
+function chartPeople(l){
  const W=520,H=190,L=14,R=14,T=34,B=26,axis=H-B;
  const{a,b}=range();
  const from=Math.max(0,Math.min(a,b-19));           // всегда минимум 20 дней контекста
@@ -584,47 +624,31 @@ function chartPeople(l,ms){
   <text x="${W-R}" y="${(y(l.plan)-6).toFixed(1)}" font-size="10" font-weight="800" fill="var(--ink-mute)" text-anchor="end">план ${l.plan}</text>`;
  const hot=valid.map(i=>`<circle cx="${x(i).toFixed(1)}" cy="${y(l.fact[i]).toFixed(1)}" r="9" fill="transparent">
    <title>${ru(DAYS[i])}: ${l.fact[i]} из ${l.plan} чел.</title></circle>`).join('');
- const mk=(ms||[]).filter(m=>m.day>=from&&m.day<=b).map(m=>{const px=x(m.day),lab=m.type.split(' ')[0],wl=lab.length*5.8+16;
-  const lx=Math.max(L,Math.min(px-wl/2,W-R-wl));
-  return `<g><line x1="${px.toFixed(1)}" y1="${T-2}" x2="${px.toFixed(1)}" y2="${axis}" stroke="var(--primary)" stroke-width="1.3" stroke-dasharray="4 4" opacity=".75"/>
-   <rect x="${lx.toFixed(1)}" y="${T-19}" width="${wl.toFixed(1)}" height="17" rx="8.5" fill="var(--primary-active)"/>
-   <text x="${(lx+wl/2).toFixed(1)}" y="${T-7}" font-size="9.5" font-weight="800" fill="#fff" text-anchor="middle">${esc(lab)}</text>
-   <title>${esc(m.type)} · ${ru(m.date)}</title></g>`;}).join('');
  return `<svg width="100%" height="100%" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">
   <defs><linearGradient id="gp" x1="0" y1="0" x2="0" y2="1">
    <stop offset="0%" stop-color="var(--primary)" stop-opacity=".24"/><stop offset="100%" stop-color="var(--primary)" stop-opacity="0"/></linearGradient></defs>
   ${band}${lines}
   ${plan}${marks}${hot}
   <circle cx="${x(valid[valid.length-1]).toFixed(1)}" cy="${y(l.fact[valid[valid.length-1]]).toFixed(1)}" r="5" fill="var(--primary-active)" stroke="var(--surface)" stroke-width="2.5"/>
-  <line x1="${L}" y1="${axis}" x2="${W-R}" y2="${axis}" stroke="var(--border)"/>${labels}${mk}</svg>`;
+  <line x1="${L}" y1="${axis}" x2="${W-R}" y2="${axis}" stroke="var(--border)"/>${labels}</svg>`;
 }
 // Диаграмма 2: балл за 6 последних недель, текущая выделена
-function chartQuality(l,ms){
+function chartQuality(l){
  const W=520,H=190,L=14,R=14,T=34,B=26,axis=H-B;
  const cur=qw(l),from=Math.max(0,cur-5),wks=[];for(let w=from;w<=cur;w++)wks.push(w);
  const n=wks.length,slot=(W-L-R)/n,bw=Math.min(52,slot-16);
  const x=k=>L+(k+0.5)*slot,y=v=>axis-(v/5)*(axis-T);
- const critText=w=>w===cur&&l.hasCriteria
-  ?CR.map(([k,t])=>`${t}: ${FACTS[k][l.crit[k]]} — ${l.crit[k]},0`).join('\n')
-  :'Детализация оценки по критериям не заполнена';
  const bars=wks.map((w,k)=>{const v=l.q[w],isCur=w===cur;
+  if(!hasScoreValue(v))return `<g><text x="${x(k).toFixed(1)}" y="${axis-8}" font-size="12" font-weight="800" fill="var(--ink-mute)" text-anchor="middle">—</text>
+   <text x="${x(k).toFixed(1)}" y="${H-8}" font-size="9.5" font-weight="800" fill="var(--ink-mute)" text-anchor="middle">${WLABEL[w]}</text></g>`;
   return `<g><rect x="${(x(k)-bw/2).toFixed(1)}" y="${y(v).toFixed(1)}" width="${bw.toFixed(1)}" height="${(axis-y(v)).toFixed(1)}"
-    rx="6" fill="${col(v)}" opacity="${isCur?'1':'.45'}"><title>${WFULL[w]}: балл ${v.toFixed(1).replace('.',',')}\n\n${critText(w)}</title></rect>
+    rx="6" fill="${col(v)}" opacity="${isCur?'1':'.45'}" data-chart-tip="${l.id}" data-week="${w}"/>
    <text x="${x(k).toFixed(1)}" y="${(y(v)-8).toFixed(1)}" font-size="${isCur?'13':'11.5'}" font-weight="900"
     fill="${col(v)}" text-anchor="middle">${v.toFixed(1).replace('.',',')}</text>
    <text x="${x(k).toFixed(1)}" y="${H-8}" font-size="9.5" font-weight="${isCur?'900':'800'}"
     fill="${isCur?'var(--ink)':'var(--ink-mute)'}" text-anchor="middle">${WLABEL[w]}</text></g>`;}).join('');
- const norm=`<line x1="${L}" y1="${y(3.5)}" x2="${W-R}" y2="${y(3.5)}" stroke="var(--ink-dim)" stroke-width="1.4" stroke-dasharray="6 5"/>
-  <text x="${W-R}" y="${(y(3.5)-6).toFixed(1)}" font-size="10" font-weight="800" fill="var(--ink-mute)" text-anchor="end">норма 3,5</text>`;
- const mk=(ms||[]).filter(m=>wks.includes(WEEK_OF[m.day])).map(m=>{
-  const k=wks.indexOf(WEEK_OF[m.day]),px=x(k),lab=m.type.split(' ')[0],wl=lab.length*5.8+16;
-  const lx=Math.max(L,Math.min(px-wl/2,W-R-wl));
-  return `<g><line x1="${px.toFixed(1)}" y1="${T-2}" x2="${px.toFixed(1)}" y2="${axis}" stroke="var(--primary)" stroke-width="1.3" stroke-dasharray="4 4" opacity=".7"/>
-   <rect x="${lx.toFixed(1)}" y="${T-19}" width="${wl.toFixed(1)}" height="17" rx="8.5" fill="var(--primary-active)"/>
-   <text x="${(lx+wl/2).toFixed(1)}" y="${T-7}" font-size="9.5" font-weight="800" fill="#fff" text-anchor="middle">${esc(lab)}</text>
-   <title>${esc(m.type)} · ${ru(m.date)}</title></g>`;}).join('');
  return `<svg width="100%" height="100%" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">
-  ${bars}${norm}<line x1="${L}" y1="${axis}" x2="${W-R}" y2="${axis}" stroke="var(--border)"/>${mk}</svg>`;
+  ${bars}<line x1="${L}" y1="${axis}" x2="${W-R}" y2="${axis}" stroke="var(--border)"/></svg>`;
 }
 
 /* ── состояние ── */
@@ -632,9 +656,10 @@ let COLLAPSED=new Set(),cur=null,curName=null,VIEW='list';
 let F={q:'',obj:'',state:'all'},sortBy=null,sortDir=1,newCrit='';
 
 function visible(l){
- if(F.q&&!((l.name+' '+l.work+' '+l.object+' '+(l.comment||'')).toLowerCase().includes(F.q)))return false;
+ if(Array.isArray(l.sourceRows)&&!rowsInPeriod(l).length)return false;
+ if(F.q&&!((l.name+' '+l.work).toLowerCase().includes(F.q)))return false;
  if(F.obj&&l.object!==F.obj)return false;
- if(F.state==='people'&&!flags(l).includes('people'))return false;
+ if(F.state==='people'&&people(l).gap>=0)return false;
  if(F.state==='quality'&&!hasQualityRating(l))return false;
  if(F.state==='done'&&!isDone(l))return false;
  return true;
@@ -651,6 +676,7 @@ function render(){
  $('#pLabel').textContent=periodLabel();
  $('#pNext').disabled=offset===0;
  $('#pPrev').disabled=offset>=Math.floor((ND-1)/PLEN[PERIOD]);
+ $('#btnSummary').disabled=!F.obj;$('#btnSummary').title=F.obj?'Открыть резюме':'Сначала выберите объект';
  if(VIEW==='detail'){renderDetail();totals();return;}
 
  const list=L.filter(visible);
@@ -662,54 +688,44 @@ function render(){
   g.gapText=g.now?`<b>${g.now}</b> чел.`:'в норме';
   const rated=g.items.filter(hasQualityRating);g.q=rated.length?rated.reduce((a,x)=>a+qScore(x),0)/rated.length:null;});
  const groupValue=g=>{
+  if(sortBy==='date')return g.items.map(l=>l.date).sort()[0]||'';
   if(sortBy==='name')return g.name;
-  if(sortBy==='object')return [...new Set(g.items.map(l=>l.object))].join(' ');
+  if(sortBy==='work')return g.items.map(l=>l.work).sort((a,b)=>a.localeCompare(b,'ru'))[0]||'';
   if(sortBy==='gap')return -g.now;
   if(sortBy==='score')return g.q??Infinity;
   if(sortBy==='done')return g.items.filter(l=>l.done).length/g.items.length;
-  if(['reason','decision','measure','comment'].includes(sortBy))return g.items.map(l=>l[sortBy]||'').sort((a,b)=>a.localeCompare(b,'ru'))[0]||'';
+  if(['measure','comment'].includes(sortBy))return g.items.map(l=>workValue(l,sortBy)).sort((a,b)=>a.localeCompare(b,'ru'))[0]||'';
+  if(['reason','decision'].includes(sortBy))return g.items.map(l=>l[sortBy]||'').sort((a,b)=>a.localeCompare(b,'ru'))[0]||'';
   return '';
  };
  groups.sort((a,b)=>{if(!sortBy)return (b.react-a.react)||(a.q-b.q);const x=groupValue(a),y=groupValue(b);return (typeof x==='number'?x-y:String(x).localeCompare(String(y),'ru'))*sortDir;});
  groups.forEach(g=>{if(sortBy)g.items.sort((a,b)=>{
-  const val=l=>sortBy==='gap'?-people(l).now:sortBy==='score'?qScore(l):sortBy==='done'?(l.done?1:0):(l[sortBy]||'').toLowerCase();
+  const val=l=>sortBy==='date'?l.date:sortBy==='gap'?people(l).gap:sortBy==='score'?qScore(l):sortBy==='done'?(isDone(l)?1:0):
+   ['measure','comment'].includes(sortBy)?workValue(l,sortBy).toLowerCase():(l[sortBy]||'').toLowerCase();
   const x=val(a),y=val(b);
   return (typeof x==='number'?x-y:String(x).localeCompare(String(y),'ru'))*sortDir;});});
 
- $('#tb').innerHTML=groups.length?groups.map(g=>{
-  const open=!COLLAPSED.has(g.name),ms=mstate(g.name);
-  const head=`<tr class="grp" data-grp="${esc(g.name)}">
-   <td colspan="2"><span class="caret ${open?'open':''}" data-caret="${esc(g.name)}">▸</span>
-     <span class="gname" data-gopen="${esc(g.name)}">${esc(g.name)}</span></td>
-   <td><span class="need">${g.gapText}</span></td>
-   <td style="white-space:nowrap">${g.q==null?'—':`<span class="score ${sCls(g.q)}" style="border:none;cursor:default;display:inline-block;vertical-align:middle">${g.q.toFixed(1).replace('.',',')}</span>
-     <span class="gsub" style="margin-left:8px">средний</span>`}</td>
-   <td colspan="4"></td>
-   <td></td></tr>`;
-  const rows=open?g.items.map(l=>{
+ $('#tb').innerHTML=groups.length?groups.flatMap(g=>g.items).map(l=>{
    const p=people(l),s=qScore(l),d=qDelta(l),E=cellErrors(l);
    return `<tr data-row="${l.id}" class="${isDone(l)?'done':''} ${DIRTY.has(l.id)?'dirty':''}">
-    <td class="lname" data-open="${l.id}">${esc(l.work)}</td>
-    <td style="font-weight:700;white-space:nowrap">${esc(l.object)}</td>
+    <td class="lname" data-open="${l.id}">${ru(l.date)}</td><td class="lname" data-open="${l.id}">${esc(l.name)}</td><td class="lname" data-open="${l.id}">${esc(l.work)}</td>
     <td class="metric-child"><span class="need">${p.text}</span></td>
     <td class="metric-child" style="white-space:nowrap">${hasQualityRating(l)?`<span class="score ${sCls(s)}" data-tip="${l.id}"
-        style="display:inline-block;vertical-align:middle">${s.toFixed(1).replace('.',',')}</span>
-      <span class="delta ${d>0?'up':d<0?'down':'flat'}" style="margin-left:8px;vertical-align:middle">${
-        d>0?'▲ +':d<0?'▼ ':'— '}${d!==0?Math.abs(d).toFixed(1).replace('.',','):''}</span>`:'—'}</td>
-    <td>${sparkQ(l)}</td>
+        style="display:inline-block;vertical-align:middle">${s.toFixed(1).replace('.',',')}</span>${d!==0?`
+      <span class="delta ${d>0?'up':'down'}" style="margin-left:8px;vertical-align:middle">${
+        d>0?'▲ +':'▼ '}${Math.abs(d).toFixed(1).replace('.',',')}</span>`:''}`:'—'}</td>
     <td class="rp">${esc(l.reason)||'—'}</td>
-    <td>${l.decision?`<span class="tagd ${hardDecision(l.decision)?'hard':/не принял/i.test(l.decision)?'soft':''}">${esc(l.decision)}</span>`:'—'}</td>
+    <td><span class="decision-field tagd ${decisionCls(l.decision)}">${esc(l.decision)||'—'}</span></td>
     <td>${combo(l.id,'measure','выберите меру',E.measure)}</td>
     <td><span class="cell ${E.comment?'has-err':''}"><textarea class="cmt-in" data-txt="${l.id}" rows="1" maxlength="600" ${EDITABLE?'':'disabled'}
-      placeholder="обратная связь руководителю проекта">${esc(l.comment||'')}</textarea>
+      placeholder="обратная связь руководителю проекта">${esc(workValue(l,'comment'))}</textarea>
       ${E.comment?`<span class="tip">${esc(E.comment.m)}</span>`:''}</span></td>
-   </tr>`;}).join(''):'';
-  return head+rows;}).join(''):'<tr><td colspan="9" style="padding:36px;color:var(--ink-mute);font-weight:700">По фильтрам ничего не найдено</td></tr>';
+   </tr>`;}).join(''):'<tr><td colspan="9" style="padding:36px;color:var(--ink-mute);font-weight:700">По фильтрам ничего не найдено</td></tr>';
 
  bind();totals();
 }
 function combo(id,field,ph,e){
- const l=R(id),v=l[field]||'';
+ const l=R(id),v=workValue(l,field);
  return `<span class="cell ${e?'has-err':''}"><span class="cb ${v?'has-val':''}" style="min-width:180px;display:block">
   <input class="cb-in" data-cb="${id}|${field}" value="${esc(v)}" placeholder="${esc(ph)}" autocomplete="off" ${EDITABLE?'':'disabled'}>
   ${v?`<span class="cb-clear" data-clr="${id}|${field}">✕</span>`:''}<span class="cb-car">▾</span>
@@ -735,17 +751,19 @@ function openDD(inp){
 function commit(inp,val,isNew){
  const [id,field]=inp.dataset.cb.split('|');
  if(isNew&&val&&!MEASURES.includes(val)){MEASURES.push(val);parent.postMessage({type:'resource-measure-add',value:val},location.origin);toast(`Сохраняем «${val}» в справочник…`);}
- R(id)[field]=val;markDirty(R(id));draft();render();
+ setWorkValue(R(id),field,val);markDirty(R(id));render();queueSave();
 }
 document.addEventListener('mousedown',e=>{const cb=e.target.closest('.cb');
  $$('.cb-dd').forEach(d=>{if(!cb||d!==cb.querySelector('.cb-dd'))d.classList.remove('show');});
  if(!e.target.closest('#htip')&&!e.target.closest('[data-tip]'))hideTip(true);});
-window.addEventListener('scroll',()=>{closeDD();},true);
+window.addEventListener('scroll',e=>{if(e.target instanceof Element&&e.target.closest('.cb-dd'))return;closeDD();},true);
 
 function bind(){
  if(!EDITABLE)$$('.cb-in[data-cb],[data-txt]').forEach(el=>el.disabled=true);
  $$('[data-clr]').forEach(x=>x.onmousedown=e=>{e.preventDefault();e.stopPropagation();
-  const [id,f]=x.dataset.clr.split('|');R(id)[f]='';markDirty(R(id));draft();render();});
+  const [id,f]=x.dataset.clr.split('|'),l=R(id);setWorkValue(l,f,'');markDirty(l);
+  const cb=x.closest('.cb');cb.classList.remove('has-val');cb.querySelector('.cb-in').value='';x.remove();
+  x.closest('tr')?.classList.remove('done');queueSave();});
  $$('.cb-in[data-cb]').forEach(inp=>{
   inp.onfocus=()=>openDD(inp);inp.onmousedown=()=>setTimeout(()=>openDD(inp),0);inp.oninput=()=>openDD(inp);
   inp.onkeydown=e=>{const dd=inp.parentElement.querySelector('.cb-dd'),ops=Array.from(dd.querySelectorAll('.cb-op'));
@@ -759,11 +777,10 @@ function bind(){
    if(e.key==='Escape'){dd.classList.remove('show');inp.blur();}};
   inp.onblur=()=>{const own=inp.parentElement.querySelector('.cb-dd');
    setTimeout(()=>{own.classList.remove('show');const [id,f]=inp.dataset.cb.split('|');
-    if(inp.value.trim()!==(R(id)[f]||''))inp.value=R(id)[f]||'';},120);};
+    if(inp.value.trim()!==workValue(R(id),f))inp.value=workValue(R(id),f);},120);};
  });
- $$('[data-txt]').forEach(i=>{const grow=()=>{i.style.height='auto';i.style.height=Math.max(36,i.scrollHeight)+'px';};
-  grow();i.oninput=grow;
-  i.onchange=()=>{R(i.dataset.txt).comment=i.value.trim();markDirty(R(i.dataset.txt));draft();render();};
+ $$('[data-txt]').forEach(i=>{
+  i.onchange=()=>{const l=R(i.dataset.txt);setWorkValue(l,'comment',i.value.trim());markDirty(l);queueSave();};
   i.onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();i.blur();}};});
  $$('[data-caret]').forEach(el=>el.onclick=e=>{e.stopPropagation();const n=el.dataset.caret;
   COLLAPSED.has(n)?COLLAPSED.delete(n):COLLAPSED.add(n);render();});
@@ -777,24 +794,24 @@ function bind(){
 
 /* ── тултип критериев ── */
 let tipPinned=false;
-function tipHTML(l){
- if(!l.hasCriteria)return `<div class="htip-h">Детализация оценки не заполнена</div><div class="htip-f">Итоговый балл: ${qScore(l).toFixed(1).replace('.',',')}</div>`;
+function tipHTML(l,week=qw(l)){
  const bc=v=>v<2.5?'#E8A0A0':v<3.5?'#EECB95':v<4.5?'#B4CE9C':'#8FC2EC';
- return `<div class="htip-h">Что отметил руководитель проекта · ${esc(WFULL[qw(l)])}</div>`
-  +CR.map(([k,t])=>{const v=l.crit[k];
-   return `<div class="htip-r"><span class="htip-k">${esc(t)}</span><span>${esc(FACTS[k][v]||'—')}</span>
-    <span class="htip-b" style="color:${bc(v)}">${v},0</span></div>`;}).join('')
-  +`<div class="htip-f">Оценил ${esc(l.rp)} · итоговый балл ${qScore(l).toFixed(1).replace('.',',')} — среднее по пяти критериям</div>`;
+ const criteria=l.critByWeek?.[week]||l.crit;
+ return `<div class="htip-h">Что отметил руководитель проекта · ${esc(WFULL[week])}</div>`
+  +CR.map(([k,t])=>{const v=criteria[k];
+   const set=Number.isFinite(v);
+   return `<div class="htip-r"><span class="htip-k">${esc(t)}</span><span>${esc(set?(FACTS[k][v]||'Формулировка выбрана'):'—')}</span>
+    <span class="htip-b" style="color:${set?bc(v):'var(--ink-mute)'}">${set?v+',0':'—'}</span></div>`;}).join('');
 }
-function showTip(el,id,pin){const tip=$('#htip');tip.innerHTML=tipHTML(R(id));tip.classList.add('show');tipPinned=!!pin;
+function showTip(el,id,pin,week){const tip=$('#htip');tip.innerHTML=tipHTML(R(id),week);tip.classList.add('show');tipPinned=!!pin;
  const r=el.getBoundingClientRect(),h=tip.offsetHeight,w=tip.offsetWidth;
  tip.style.left=Math.min(Math.max(8,r.left-10),window.innerWidth-w-12)+'px';
  tip.style.top=(r.bottom+h+12>window.innerHeight?Math.max(8,r.top-h-8):r.bottom+8)+'px';}
 function hideTip(force){if(tipPinned&&!force)return;$('#htip').classList.remove('show');tipPinned=false;}
-function bindTips(){$$('[data-tip]').forEach(el=>{
- el.onmouseenter=()=>{if(!tipPinned)showTip(el,+el.dataset.tip,false);};
+function bindTips(){$$('[data-tip],[data-chart-tip]').forEach(el=>{const id=+(el.dataset.tip||el.dataset.chartTip),week=el.dataset.week==null?undefined:+el.dataset.week;
+ el.onmouseenter=()=>{if(!tipPinned)showTip(el,id,false,week);};
  el.onmouseleave=()=>hideTip(false);
- el.onclick=e=>{e.stopPropagation();tipPinned?hideTip(true):showTip(el,+el.dataset.tip,true);};});}
+ el.onclick=e=>{e.stopPropagation();tipPinned?hideTip(true):showTip(el,id,true,week);};});}
 
 /* ── дашборд связки ── */
 const ACTION={quality:'усилить входной контроль и потребовать план по браку',
@@ -836,7 +853,6 @@ function renderDetail(){
   <div class="dh">
     <span class="backlink" id="backList">← К списку</span>
     <div class="dh-name">${esc(l.name)} · ${esc(l.work)}<small>${esc(l.object)}</small></div>
-    <div class="dh-right"><button class="btn" id="toMeasure" ${EDITABLE?'':'disabled'}>Записать меру</button></div>
   </div>
 
   <!-- 2. KPI -->
@@ -858,12 +874,12 @@ function renderDetail(){
 
   <!-- 3. Верхнеуровневые визуалы -->
   <div class="dcharts">
-    <div class="card"><div class="card-t">Люди на объекте, чел. в день
+    <div class="card"><div class="card-t">Динамика по людям, чел. в день
       <span class="aside">последние 4 недели</span></div>
-      <div class="chart">${chartPeople(l,linkMs)}</div></div>
-    <div class="card"><div class="card-t">Качество работ, балл 0–5
+      <div class="chart">${chartPeople(l)}</div></div>
+    <div class="card"><div class="card-t">Динамика по качеству, балл 0–5
       <span class="aside">наведите на столбец — состав балла</span></div>
-      <div class="chart">${hasQualityRating(l)?chartQuality(l,linkMs):'<div class="empty-s">Оценка качества не выставлена</div>'}</div></div>
+      <div class="chart">${hasQualityRating(l)?chartQuality(l):'<div class="empty-s">Оценка качества не выставлена</div>'}</div></div>
   </div>
 
   <!-- 4. Детализация -->
@@ -871,7 +887,7 @@ function renderDetail(){
     <div class="card"><div class="card-t">Рекомендации<span class="aside">${recommendations(l).length}</span></div>
       <div class="scroll-in">${recommendations(l).map(r=>`<div class="rec ${r.tone}">
         <div class="rec-t">${esc(r.t)}</div><div class="rec-x">${esc(r.x)}</div>
-        ${r.act&&EDITABLE?`<div style="margin-top:7px"><button class="btn s" data-rec="${esc(r.act)}">Записать: ${esc(r.act)}</button></div>`:''}</div>`).join('')}</div></div>
+        </div>`).join('')}</div></div>
 
     <div class="card"><div class="card-t">История мер<span class="aside">${ms.length}</span></div>
       <div class="scroll-in">${ms.length?ms.map((m,i)=>{const e=effect(l,m);
@@ -879,56 +895,29 @@ function renderDetail(){
          <div class="jr-h">${esc(m.type)}<span class="d">${ru(m.date)}</span>
            <span class="mtag ${m.done?'done':'work'}" style="margin-left:auto">${m.done?'отработана':'в работе'}</span></div>
          <div class="jr-t">${esc(m.text)}</div>
-         <div class="eff ${e.tone}">Балл ${e.qAt.toFixed(1).replace('.',',')} → ${e.qNow.toFixed(1).replace('.',',')},
+         <div class="eff ${e.tone}">Балл ${hasScoreValue(e.qAt)?e.qAt.toFixed(1).replace('.',','):'—'} → ${hasScoreValue(e.qNow)?e.qNow.toFixed(1).replace('.',','):'—'},
            люди ${e.dp>0?'+':''}${e.dp.toFixed(1).replace('.',',')} чел./день</div>
          ${m.done||!EDITABLE?'':`<div style="margin-top:7px"><button class="btn s outline" data-mdone="${i}">Отметить отработанной</button></div>`}
         </div>`;}).join(''):'<div class="empty-s">Мер не зафиксировано.</div>'}</div></div>
   </div>`;
 
- $$('[data-rec]').forEach(b=>b.onclick=()=>openMeasureDlg(l,b.dataset.rec));
-
  $('#backList').onclick=()=>{VIEW='list';render();};
- $('#toMeasure').onclick=()=>{if(EDITABLE)openMeasureDlg(l,'');};
- $$('[data-mdone]').forEach(b=>b.onclick=()=>{ms[+b.dataset.mdone].done=true;markDirty(l);draft();render();toast('Мера отмечена отработанной');});
+ $$('[data-mdone]').forEach(b=>b.onclick=()=>{ms[+b.dataset.mdone].done=true;markDirty(l);render();queueSave();toast('Мера отмечена отработанной');});
+ bindTips();
 }
-function openMeasureDlg(l,type){
- dlg({t:'Новая мера',x:`${esc(l.name)} · ${esc(l.work)}, ${esc(l.object)}`,
-  extra:`<div class="field" style="margin-top:14px"><span class="flabel">Мера</span>
-    <div class="cb" id="mTypeBox"><input id="mType2" class="cb-in" style="height:38px" value="${esc(type||MEASURES[0]||'')}" readonly><span class="cb-car">▾</span><div class="cb-dd" id="mTypeDD"></div></div></div>
-   <div class="field"><span class="flabel">ОС для РП</span>
-    <textarea class="cmt-in" id="mText2" style="min-height:90px;background:var(--field)" placeholder="необязательная обратная связь руководителю проекта"></textarea></div>`,
-  f:[{t:'Отмена'},{t:'Записать меру',s:'',fn:null}],keep:true});
- const mInput=$('#mType2'),mDD=$('#mTypeDD');
- const openMeasures=()=>{mDD.innerHTML=MEASURES.map(m=>`<div class="cb-op" data-v="${esc(m)}">${esc(m)}</div>`).join('');mDD.classList.add('show');placeDD(mInput,mDD);mDD.querySelectorAll('.cb-op').forEach(o=>o.onmousedown=e=>{e.preventDefault();mInput.value=o.dataset.v;mDD.classList.remove('show');});};
- mInput.onclick=openMeasures;mInput.onfocus=openMeasures;
- $('#dFoot').lastChild.onclick=()=>{const t=mInput.value,x=$('#mText2').value.trim();
-  MEAS[linkKey(l)]=[{date:TODAY,type:t,text:x,done:false,author:OWNER,
-   tags:flags(l).filter(f=>f==='people'||f==='quality'),link:l.id,day:ND-1}].concat(mOf(l));
-  l.measure=t;l.comment=x;markDirty(l);$('#ov').classList.remove('show');draft();render();toast('Мера записана');};
-}
-
 /* ── итоги ── */
 function totals(){
  const list=L.filter(visible);
- const gap=list.reduce((a,l)=>a+people(l).now,0);
+ const gap=list.reduce((a,l)=>a+people(l).gap,0);
  const rated=list.filter(hasQualityRating),avg=rated.length?rated.reduce((a,l)=>a+qScore(l),0)/rated.length:null;
- const react=list.filter(l=>needAction(l)&&!isDone(l)).length;
- const work=[...new Set(list.map(l=>l.name))].filter(n=>mstate(n)==='work').length;
  $('#tGap').textContent=gap;$('#tAvg').textContent=avg==null?'—':avg.toFixed(1).replace('.',',');
- $('#tReact').textContent=react;$('#tWork').textContent=work;
- $('#dirtyCount').textContent=DIRTY.size;
  const need=list.filter(needAction),done=need.filter(isDone).length;
  $('#progTxt').textContent=`${done} из ${need.length}`;
  $('#progFill').style.width=(need.length?done/need.length*100:0)+'%';
  $('#progFill').classList.toggle('full',need.length>0&&done===need.length);
 }
-function draft(){const d=new Date();
- $('#draftAt').textContent='черновик '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}
-function saveLocalDraft(){
- const changes=L.filter(l=>DIRTY.has(l.id)).map(l=>({key:linkKey(l),measure:l.measure||'',comment:l.comment||'',due:l.due||'',owner:l.owner||'',done:!!l.done}));
- localStorage.setItem(resourceDraftKey(),JSON.stringify({savedAt:new Date().toISOString(),changes}));
- draft();toast(`Черновик сохранён: ${changes.length} изменений`);
-}
+let saveTimer=null;
+function queueSave(){clearTimeout(saveTimer);saveTimer=setTimeout(saveRows,450);}
 
 /* ── период и фильтры ── */
 $('#segPeriod').onclick=e=>{const d=e.target.closest('div[data-p]');if(!d)return;
@@ -936,7 +925,7 @@ $('#segPeriod').onclick=e=>{const d=e.target.closest('div[data-p]');if(!d)return
 $('#pPrev').onclick=()=>{const max=Math.floor((ND-1)/PLEN[PERIOD]);offset=Math.min(max,offset+1);render();};
 $('#pNext').onclick=()=>{offset=Math.max(0,offset-1);render();};
 const OBJECTS=[...new Set(L.map(l=>l.object))];
-const HINTS=[...new Set([...L.map(l=>l.name),...L.map(l=>l.work),...L.map(l=>l.object)])];
+const HINTS=[...new Set([...L.map(l=>l.name),...L.map(l=>l.work)])];
 function ddOpen(inp,dd,items,pick){
  const q=inp.value.trim().toLowerCase(),list=items.filter(x=>x.toLowerCase().includes(q));
  dd.innerHTML=list.length?list.map((x,n)=>`<div class="cb-op ${n===0&&q?'hl':''}" data-v="${esc(x)}">${esc(x)}</div>`).join('')
@@ -963,57 +952,55 @@ function sync(){$('#cbQ').classList.toggle('has-val',!!qIn.value);
 $('#thead').onclick=e=>{const th=e.target.closest('th');if(!th||!th.dataset.s)return;
  if(sortBy===th.dataset.s)sortDir=-sortDir;else{sortBy=th.dataset.s;sortDir=1;}render();};
 $('#btnSummary').onclick=()=>{
- const {a,b}=range(),periodDates=new Set(DAYS.slice(a,b+1));
- const rows=L.filter(visible).map(l=>{
-  const inPeriod=(l.sourceRows||[]).filter(r=>periodDates.has(r.date));
-  if(!inPeriod.length)return null;
-  const saved=[...inPeriod].reverse().find(r=>r.measure||r.comment)||{};
-  const useDraft=DIRTY.has(l.id);
-  return {l,measure:useDraft?l.measure:(saved.measure||''),comment:useDraft?l.comment:(saved.comment||'')};
- }).filter(x=>x&&(x.measure||x.comment));
+ const rows=L.filter(visible).map(l=>({l,measure:workValue(l,'measure'),comment:workValue(l,'comment')}))
+  .filter(x=>x.measure||x.comment);
  const withFeedback=rows.filter(x=>x.comment).length;
- const content=rows.length?`<div class="summary-list">${rows.map(({l,measure,comment})=>`<div class="summary-item">
-   <b>${esc(l.name)} · ${esc(l.work)}</b><span>${esc(l.object)}</span>
-   <span><strong>Мера:</strong> ${esc(measure)||'—'}</span><span><strong>ОС для РП:</strong> ${esc(comment)||'—'}</span>
-  </div>`).join('')}</div>`:'<div class="empty-s" style="margin-top:14px">За выбранный период меры и обратная связь не зафиксированы.</div>';
- dlg({t:'Резюме отработки',x:`${periodLabel()} · ${F.obj||'Все объекты'}<br>Мер: ${rows.filter(x=>x.measure).length}, ОС для РП: ${withFeedback}`,
-  extra:content,f:[{t:'Закрыть',s:'',fn:()=>{}}]});
+ const contractors=new Set(rows.map(x=>x.l.name)).size,measures=rows.filter(x=>x.measure).length;
+ const content=`<div class="summary-kpis"><div class="summary-kpi"><span>Меры</span><b>${measures}</b></div>
+  <div class="summary-kpi"><span>ОС для РП</span><b>${withFeedback}</b></div><div class="summary-kpi"><span>Подрядчики</span><b>${contractors}</b></div></div>`+
+  (rows.length?rows.map(({l,measure,comment})=>`<div class="summary-section"><div class="summary-section-title">${esc(l.name)} · ${esc(l.work)}</div>
+   <div class="summary-section-meta">${esc(l.object)}</div>
+   ${measure?`<div class="summary-line"><strong>Мера:</strong> ${esc(measure)}</div>`:''}
+   ${comment?`<div class="summary-line feedback"><strong>ОС для РП:</strong> ${esc(comment)}</div>`:''}</div>`).join('')
+   :'<div class="summary-section"><div class="summary-section-title">Нет данных</div><div class="summary-line feedback">По текущим фильтрам меры и обратная связь не зафиксированы.</div></div>');
+ dlg({t:'Резюме отработки',titleHTML:'<span>Краткое <span class="accent">резюме</span></span><button class="summary-close" id="summaryClose" aria-label="Закрыть">×</button>',mode:'summary',
+  x:`${periodLabel()} · ${F.obj||'Все объекты'} · сформировано ${new Date().toLocaleDateString('ru-RU')}`,
+  extra:content,f:[]});
+ $('#dFoot').innerHTML='<span class="summary-foot-info">Резюме сформировано по текущим фильтрам</span><button class="btn flat summary-png" id="summaryPng">↓ PNG</button>';
+ $('#summaryClose').onclick=()=>$('#ov').classList.remove('show');
+ $('#summaryPng').onclick=()=>parent.postMessage({type:'resource-summary-png'},location.origin);
 };
-function dlg({t,x,list,extra,f}){
- $('#dTitle').textContent=t;$('#dText').innerHTML=x;
+function dlg({t,titleHTML,x,list,extra,f,mode}){
+ $('#ov').classList.toggle('summary-mode',mode==='summary');
+ if(titleHTML)$('#dTitle').innerHTML=titleHTML;else $('#dTitle').textContent=t;
  const Lst=$('#dList');if(list){Lst.style.display='block';Lst.innerHTML=list}else Lst.style.display='none';
  $('#dExtra').innerHTML=extra||'';$('#dFoot').innerHTML='';
  f.forEach(b=>{const el=document.createElement('button');el.className='btn '+(b.s||'flat');el.textContent=b.t;
   el.onclick=()=>{if(b.fn!==null){$('#ov').classList.remove('show');b.fn&&b.fn();}};$('#dFoot').appendChild(el);});
  $('#ov').classList.add('show');}
 $('#ov').addEventListener('mousedown',e=>{if(e.target.id==='ov')$('#ov').classList.remove('show')});
-$('#btnDraft').onclick=saveLocalDraft;
 function saveRows(){
+ const versions={};
  const rows=L.filter(l=>DIRTY.has(l.id)).map(l=>{
-  const latest=l.sourceRows?.[l.sourceRows.length-1];
+  const latest=workRow(l);
   if(!latest)return null;
-  const history=mOf(l).filter(m=>!m.link||m.link===l.id);
-  const current=history[0];
+  versions[l.id]=VERSIONS.get(l.id)||0;
   return {objectId:latest.objectId,date:latest.date,work:latest.work,det:latest.det,contr:latest.contr,
-   measure:l.measure||current?.type||latest.measure||'',comment:l.comment||current?.text||latest.comment||'',
-   due:l.due||latest.due||'',owner:l.owner||current?.author||latest.owner||'',done:isDone(l)};
+   rowId:l.id,measure:workValue(l,'measure'),comment:workValue(l,'comment'),due:l.due||latest.due||'',
+   owner:l.owner||latest.owner||'',done:isDone(l)};
  }).filter(Boolean);
- if(!rows.length)return toast('Нет изменений для сохранения');
- SAVING=true;$('#btnSave').disabled=true;$('#btnSave').textContent='Сохранение…';
- parent.postMessage({type:'resource-save',rows},location.origin);
+ if(!rows.length)return;
+ SAVING=true;
+ parent.postMessage({type:'resource-save',rows,versions},location.origin);
 }
-$('#btnSave').onclick=()=>{
- const bad=L.filter(l=>DIRTY.has(l.id)&&Object.keys(cellErrors(l)).length);
- if(bad.length)return dlg({t:'Есть незаполненные поля',x:`В ${bad.length} строках не хватает меры или комментария.`,
-  list:bad.map(l=>`<div>${esc(l.name)} — ${esc(l.work)}</div>`).join(''),
-  f:[{t:'Показать ошибки',s:'',fn:()=>{VIEW='list';F.state='all';bad.forEach(l=>COLLAPSED.delete(l.name));render();setTimeout(()=>document.querySelector(`[data-row="${bad[0].id}"]`)?.scrollIntoView({behavior:'smooth',block:'center'}),0);}}]});
- saveRows();
-};
 window.addEventListener('message',event=>{
  if(event.origin!==location.origin)return;
  if(event.data?.type==='resource-save-result'){
-  SAVING=false;$('#btnSave').disabled=false;$('#btnSave').textContent='Сохранить';
-  if(event.data.ok){DIRTY.clear();localStorage.removeItem(resourceDraftKey());toast('Изменения сохранены');}else toast(event.data.message||'Не удалось сохранить изменения');
+  SAVING=false;
+  if(event.data.ok){Object.entries(event.data.versions||{}).forEach(([id,version])=>{
+    id=Number(id);if((VERSIONS.get(id)||0)===version){DIRTY.delete(id);EDIT_ROWS.delete(id);}
+   });toast('Изменения сохранены');}
+  else toast(event.data.message||'Не удалось сохранить изменения');
   return;
  }
  if(event.data?.type==='resource-measure-result'){
@@ -1024,42 +1011,35 @@ window.addEventListener('message',event=>{
  const rows=Array.isArray(event.data.rows)?event.data.rows:[];
  const groups=new Map();
  rows.forEach(r=>{
-  const key=[r.objectId,r.object,r.work,r.det,r.contr].join('\u001f');
+  const key=[r.objectId,r.object,r.work,r.det,r.contr,r.date].join('\u001f');
   if(!groups.has(key))groups.set(key,[]);
   groups.get(key).push(r);
  });
- CURRENT_USER=String(event.data.userId||'unknown');EDITABLE=event.data.canEdit!==false;DIRTY.clear();UID=0;MEAS={};
+ EDITABLE=event.data.canEdit!==false;DIRTY.clear();EDIT_ROWS.clear();UID=0;MEAS={};
  L=[...groups.values()].map(sourceRows=>{
   sourceRows.sort((a,b)=>String(a.date).localeCompare(String(b.date)));
   const latest=sourceRows[sourceRows.length-1],byDate=new Map(sourceRows.map(r=>[r.date,r]));
   const scores=Array(NW).fill(null);
   sourceRows.forEach(r=>{const i=DAYS.indexOf(r.date);if(i>=0&&hasScoreValue(r.qualityScore))scores[WEEK_OF[i]]=Number(r.qualityScore);});
-  let last=hasScoreValue(latest.qualityScore)?Number(latest.qualityScore):3.5;
-  for(let i=NW-1;i>=0;i--){if(scores[i]==null)scores[i]=last;else last=scores[i];}
-  const score=scores[NW-1];
   const crit={quality:latest.qualityCriterionScore,safety:latest.safetyCriterionScore,people:latest.peopleCriterionScore,volume:latest.volumeCriterionScore,clean:latest.cleanCriterionScore};
+  const critByWeek={};sourceRows.forEach(r=>{const i=DAYS.indexOf(r.date);if(i<0)return;const values={quality:r.qualityCriterionScore,safety:r.safetyCriterionScore,people:r.peopleCriterionScore,volume:r.volumeCriterionScore,clean:r.cleanCriterionScore};
+   if(Object.values(values).some(Number.isFinite))critByWeek[WEEK_OF[i]]=values;});
   const hasCriteria=Object.values(crit).every(Number.isFinite);
-  const l={id:++UID,name:latest.contr||'Без подрядчика',object:latest.object||'',work:[latest.work,latest.det].filter(Boolean).join(' · '),
+  const l={id:++UID,date:latest.date,name:latest.contr||'Без подрядчика',object:latest.object||'',work:[latest.work,latest.det].filter(Boolean).join(' · '),
    plan:Number(latest.plan)||0,fill:Number(latest.plan)?Number(latest.fact)/Number(latest.plan):1,q:scores,
-   crit,hasCriteria,reason:latest.reason||'',decision:latest.decision||'',
+   crit,critByWeek,hasCriteria,reason:latest.reason||'',decision:latest.decision||'',
    measure:latest.measure||'',comment:latest.comment||'',due:latest.due||'',owner:latest.owner||'',done:!!latest.done,sourceRows};
   l.rp=latest.updatedBy||latest.owner||OWNER;
-  l.fact=DAYS.map(d=>{const r=byDate.get(d);return r?Number(r.fact)||0:null;});
+  l.fact=DAYS.map(d=>{const r=byDate.get(d);return r&&r.fact!==null&&r.fact!==undefined?Number(r.fact):null;});
   const history=sourceRows.filter(r=>r.measure||r.comment).sort((a,b)=>String(b.date).localeCompare(String(a.date))).map(r=>({
    date:r.date,type:r.measure||'Мера',text:r.comment||r.measure,done:!!r.done,author:r.updatedBy||r.owner||OWNER,
    tags:[],link:l.id,day:Math.max(0,DAYS.indexOf(r.date))}));
   if(history.length)MEAS[linkKey(l)]=(MEAS[linkKey(l)]||[]).concat(history);
   return l;
  });
- try{
-  const saved=EDITABLE?JSON.parse(localStorage.getItem(resourceDraftKey())||'null'):null;
-  (saved?.changes||[]).forEach(change=>{const l=L.find(item=>linkKey(item)===change.key);if(!l)return;Object.assign(l,change);DIRTY.add(l.id);});
-  if(saved?.savedAt)$('#draftAt').textContent='черновик '+new Date(saved.savedAt).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
- }catch{localStorage.removeItem(resourceDraftKey());}
  OBJECTS.splice(0,OBJECTS.length,...new Set(L.map(l=>l.object)));
- HINTS.splice(0,HINTS.length,...new Set([...L.map(l=>l.name),...L.map(l=>l.work),...L.map(l=>l.object)]));
+ HINTS.splice(0,HINTS.length,...new Set([...L.map(l=>l.name),...L.map(l=>l.work)]));
  if(Array.isArray(event.data.measures)&&event.data.measures.length)MEASURES.splice(0,MEASURES.length,...event.data.measures);
- $('#btnSave').style.display=EDITABLE?'':'none';$('#btnDraft').style.display=EDITABLE?'':'none';
  F={q:'',obj:'',state:'all'};qIn.value='';objIn.value='';VIEW='list';sync();
 });
 parent.postMessage({type:'resource-ready'},location.origin);
